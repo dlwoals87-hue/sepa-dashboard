@@ -387,6 +387,11 @@
             <p id="setup-sub" class="text-xs text-slate-500">마우스를 올리면 시가·고가·저가·종가·거래량과 이동평균선(50/150/200일)이 표시됩니다</p>
           </div>
           <div class="flex flex-wrap items-center gap-2 text-xs">
+            <div class="inline-flex bg-slate-100 p-0.5 rounded-lg" aria-label="봉 단위 선택">
+              <button data-tf="D" class="setup-tf-btn px-2 py-1 rounded-md font-semibold bg-white text-slate-900 shadow-sm">일봉</button>
+              <button data-tf="W" class="setup-tf-btn px-2 py-1 rounded-md font-medium text-slate-600 hover:text-slate-900">주봉</button>
+              <button data-tf="M" class="setup-tf-btn px-2 py-1 rounded-md font-medium text-slate-600 hover:text-slate-900">월봉</button>
+            </div>
             <div class="inline-flex bg-slate-100 p-0.5 rounded-lg" aria-label="차트 기간 선택">
               <button data-period="1y" class="setup-period-btn px-2.5 py-1 rounded-md font-semibold bg-white text-slate-900 shadow-sm">1년</button>
               <button data-period="2y" class="setup-period-btn px-2.5 py-1 rounded-md font-medium text-slate-600 hover:text-slate-900">2년</button>
@@ -440,9 +445,22 @@
               </div>
             </div>
           </div>
-          <div id="tv-rs-chart" class="w-full h-36"></div>
+          <div class="relative w-full h-36">
+            <div id="rs-mts-legend" class="absolute top-1.5 left-2 z-10 pointer-events-none flex flex-wrap gap-2.5 text-[11px] font-semibold bg-white/85 px-2 py-0.5 rounded border border-slate-200/80 tabular-nums">
+              <span class="text-blue-600">RS Line: <span id="mts-rs-val">-</span></span>
+              <span class="text-red-600">RS 50평균: <span id="mts-rsma-val">-</span></span>
+            </div>
+            <div id="tv-rs-chart" class="w-full h-full"></div>
+          </div>
         </div>
         <div id="tv-chart-wrap" class="relative h-72 md:h-96 w-full border border-slate-200 rounded-xl overflow-hidden bg-white">
+          <div id="candle-mts-legend" class="absolute top-1.5 left-2 z-10 pointer-events-none flex flex-wrap gap-2.5 text-[11px] font-semibold bg-white/85 px-2 py-0.5 rounded border border-slate-200/80 tabular-nums">
+            <span class="text-sky-600">● <span id="mts-ma1-lbl">50일선</span>: <span id="mts-ma1-val">-</span></span>
+            <span class="text-purple-600">● <span id="mts-ma2-lbl">150일선</span>: <span id="mts-ma2-val">-</span></span>
+            <span class="text-amber-600">● <span id="mts-ma3-lbl">200일선</span>: <span id="mts-ma3-val">-</span></span>
+            <span class="text-blue-700">-- 피벗: <span id="mts-piv-val">-</span></span>
+            <span class="text-rose-600">-- 7%손절: <span id="mts-stp-val">-</span></span>
+          </div>
           <div id="tv-chart" class="w-full h-full"></div>
         </div>
         <div id="fallback-chart-wrap" class="relative h-80 w-full hidden">
@@ -1125,6 +1143,7 @@ python -m unittest discover -s tests -v</pre>
       setupSpyOverlay: false,
       setupSmaOverlay: true,
       setupPeriod: "1y",
+      setupTf: "D",
       r5080Filter: "alert",
       r5080Search: "",
       r5080Index: "ALL",
@@ -1551,13 +1570,46 @@ python -m unittest discover -s tests -v</pre>
       }).join("");
     }
 
+    function resampleCandles(candles, tf) {
+      if (tf === "D" || !candles.length) return candles;
+      const groups = new Map();
+      for (const c of candles) {
+        let key = c.time.slice(0, 7); // Monthly YYYY-MM
+        if (tf === "W") {
+          const dt = new Date(c.time + "T00:00:00Z");
+          const day = dt.getUTCDay();
+          const diff = (day === 0 ? -6 : 1 - day);
+          dt.setUTCDate(dt.getUTCDate() + diff);
+          key = dt.toISOString().slice(0, 10);
+        }
+        if (!groups.has(key)) {
+          groups.set(key, { time: c.time, open: c.open, high: c.high, low: c.low, close: c.close, volume: c.volume || 0 });
+        } else {
+          const g = groups.get(key);
+          g.time = c.time;
+          g.high = Math.max(g.high, c.high);
+          g.low = Math.min(g.low, c.low);
+          g.close = c.close;
+          g.volume += (c.volume || 0);
+        }
+      }
+      return Array.from(groups.values());
+    }
+
     function renderSetupsTab() {
       const selEl = document.getElementById("setup-ticker-select");
       selEl.innerHTML = stocks.map(s => `<option value="${s.ticker}" ${s.ticker === state.selectedTicker ? "selected" : ""}>${s.ticker} - ${s.name}</option>`).join("");
       const s = stocks.find(x => x.ticker === state.selectedTicker) || stocks[0];
       if (!s) return;
 
+      const useLong = s.longCache && s.longCache[state.setupPeriod];
+      const activePrices = useLong ? useLong.prices : s.prices;
+      const activeDates = useLong ? useLong.dates : s.dates;
+      const rawDailyCandles = (useLong && useLong.candles) ? useLong.candles : buildDemoCandles(activePrices, activeDates);
+      const activeCandles = resampleCandles(rawDailyCandles, state.setupTf);
+
       document.getElementById("setup-title").textContent = `${s.ticker} (${s.name}) — 캔들스틱 차트 (피벗 $${s.pivot} · 손절선 $${(s.pivot * 0.93).toFixed(2)})`;
+
       const patKrS = {
         "VCP_VALIDATED": "수축완성 (VCP)", "VCP_REVIEW_REQUIRED": "수축검토필요",
         "VCP_CANDIDATE": "수축후보", "NO_SUPPORTED_PATTERN": "패턴없음", "INSUFFICIENT_DATA": "데이터부족"
@@ -1568,10 +1620,7 @@ python -m unittest discover -s tests -v</pre>
         "SETUP FORMING": "차트 다지는 중", "EXTENDED / NO CHASE": "급등이격 (추격금지)",
         "FAILED BREAKOUT": "돌파실패", "WATCH": "지켜보기", "DATA UNAVAILABLE": "데이터없음"
       };
-      const cList = (useLong && Array.isArray(useLong.candles) && useLong.candles.length >= 60)
-        ? useLong.candles
-        : buildDemoCandles(s.prices, s.dates);
-      const b60 = cList.slice(-60);
+      const b60 = rawDailyCandles.slice(-60);
       const wSlices = b60.length >= 60 ? [b60.slice(0, 20), b60.slice(20, 40), b60.slice(40, 60)] : [];
       const calcC = wSlices.length === 3 ? wSlices.map((w, idx) => {
         const hi = Math.max(...w.map(x => x.high)), lo = Math.min(...w.map(x => x.low));
@@ -1580,13 +1629,13 @@ python -m unittest discover -s tests -v</pre>
         return { stage: `T${idx + 1}`, high: hi.toFixed(2), low: lo.toFixed(2), depth_pct: d, avg_vol: av };
       }) : (s.contractions || []);
 
-      const avgV50 = cList.length >= 50 ? cList.slice(-50).reduce((a, b) => a + (b.volume || 0), 0) / 50 : 0;
+      const avgV50 = rawDailyCandles.length >= 50 ? rawDailyCandles.slice(-50).reduce((a, b) => a + (b.volume || 0), 0) / 50 : 0;
       const t3VolRatio = (calcC.length === 3 && avgV50 > 0) ? +(calcC[2].avg_vol / avgV50).toFixed(2) : null;
 
       let priorUp = s.prior_uptrend_pct;
-      if ((priorUp === null || priorUp === undefined) && cList.length >= 120) {
-        const baseHi = Math.max(...cList.slice(-90).map(x => x.high));
-        const priorLo = Math.min(...cList.slice(-210, -90).map(x => x.low));
+      if ((priorUp === null || priorUp === undefined) && rawDailyCandles.length >= 120) {
+        const baseHi = Math.max(...rawDailyCandles.slice(-90).map(x => x.high));
+        const priorLo = Math.min(...rawDailyCandles.slice(-210, -90).map(x => x.low));
         priorUp = priorLo > 0 ? +(((baseHi - priorLo) / priorLo) * 100).toFixed(1) : null;
       }
       const c1Pass = priorUp !== null && priorUp >= 25;
@@ -1620,14 +1669,12 @@ python -m unittest discover -s tests -v</pre>
         </div>
       `;
 
-      const useLong = s.longCache && s.longCache[state.setupPeriod];
-      const activePrices = useLong ? useLong.prices : s.prices;
-      const activeDates = useLong ? useLong.dates : s.dates;
-      const activeCandles = (useLong && useLong.candles) ? useLong.candles : buildDemoCandles(activePrices, activeDates);
-
       const tvContainer = document.getElementById("tv-chart");
       const tvWrap = document.getElementById("tv-chart-wrap");
       const fbWrap = document.getElementById("fallback-chart-wrap");
+
+      document.getElementById("mts-piv-val").textContent = `$${Number(s.pivot).toFixed(2)}`;
+      document.getElementById("mts-stp-val").textContent = `$${(s.pivot * 0.93).toFixed(2)}`;
 
       if (typeof LightweightCharts !== "undefined") {
         tvWrap.classList.remove("hidden");
@@ -1635,28 +1682,38 @@ python -m unittest discover -s tests -v</pre>
         if (tvChartInst) { tvChartInst.remove(); tvChartInst = null; }
         tvChartInst = LightweightCharts.createChart(tvContainer, {
           width: tvContainer.clientWidth || 800,
-          height: 380,
+          height: window.innerWidth < 768 ? 288 : 380,
           layout: { background: { color: "#ffffff" }, textColor: "#334155" },
           grid: { vertLines: { color: "#f1f5f9" }, horzLines: { color: "#f1f5f9" } },
           crosshair: { mode: LightweightCharts.CrosshairMode.Normal },
           timeScale: { timeVisible: false, borderColor: "#e2e8f0" },
           rightPriceScale: { borderColor: "#e2e8f0" }
         });
+
         let mainSeries = null;
+        const maValMaps = [{}, {}, {}];
+        const maPeriods = state.setupTf === "D" ? [50, 150, 200] : state.setupTf === "W" ? [10, 30, 40] : [6, 12, 24];
+        const maUnit = state.setupTf === "D" ? "일선" : state.setupTf === "W" ? "주선" : "개월선";
+        document.getElementById("mts-ma1-lbl").textContent = `${maPeriods[0]}${maUnit}`;
+        document.getElementById("mts-ma2-lbl").textContent = `${maPeriods[1]}${maUnit}`;
+        document.getElementById("mts-ma3-lbl").textContent = `${maPeriods[2]}${maUnit}`;
+
         if (state.setupSpyOverlay) {
-          const activeSpy = (useLong && useLong.spy_prices && useLong.spy_prices[0]) ? useLong.spy_prices : SPY_60.slice(-activeCandles.length);
+          const rawSpy = (useLong && useLong.spy_prices && useLong.spy_prices[0]) ? useLong.spy_prices : SPY_60.slice(-rawDailyCandles.length);
+          const spyMapByDate = {};
+          rawDailyCandles.forEach((c, i) => { if (rawSpy[i]) spyMapByDate[c.time] = rawSpy[i]; });
           const baseStock = activeCandles[0]?.close || 1;
-          const baseSpy = activeSpy[0] || 1;
+          const baseSpy = spyMapByDate[activeCandles[0]?.time] || rawSpy[0] || 1;
           const toPct = v => +(((v - baseStock) / baseStock) * 100).toFixed(2);
           const candlePctSeries = tvChartInst.addCandlestickSeries({
-            upColor: "#ef4444", downColor: "#2563eb", borderVisible: false, wickUpColor: "#ef4444", wickDownColor: "#2563eb", title: `${s.ticker} (%)`
+            upColor: "#ef4444", downColor: "#2563eb", borderVisible: false, wickUpColor: "#ef4444", wickDownColor: "#2563eb", lastValueVisible: false, priceLineVisible: false
           });
           candlePctSeries.setData(activeCandles.map(c => ({
             time: c.time, open: toPct(c.open), high: toPct(c.high), low: toPct(c.low), close: toPct(c.close)
           })));
-          const spyPctSeries = tvChartInst.addLineSeries({ color: "#f59e0b", lineWidth: 2, lineStyle: 2, title: "SPY (%)" });
-          spyPctSeries.setData(activeCandles.map((c, idx) => ({ time: c.time, value: activeSpy[idx] ? +(((activeSpy[idx] - baseSpy) / baseSpy) * 100).toFixed(2) : 0 })));
-          const volSeries = tvChartInst.addHistogramSeries({ color: "#94a3b8", priceFormat: { type: "volume" }, priceScaleId: "" });
+          const spyPctSeries = tvChartInst.addLineSeries({ color: "#f59e0b", lineWidth: 2, lineStyle: 2, lastValueVisible: false, priceLineVisible: false });
+          spyPctSeries.setData(activeCandles.map(c => ({ time: c.time, value: spyMapByDate[c.time] ? +(((spyMapByDate[c.time] - baseSpy) / baseSpy) * 100).toFixed(2) : 0 })));
+          const volSeries = tvChartInst.addHistogramSeries({ color: "#94a3b8", priceFormat: { type: "volume" }, priceScaleId: "", lastValueVisible: false, priceLineVisible: false });
           volSeries.priceScale().applyOptions({ scaleMargins: { top: 0.8, bottom: 0 } });
           volSeries.setData(activeCandles.map(c => ({ time: c.time, value: c.volume, color: c.close >= c.open ? "rgba(239,68,68,0.35)" : "rgba(37,99,235,0.35)" })));
           mainSeries = candlePctSeries;
@@ -1665,28 +1722,32 @@ python -m unittest discover -s tests -v</pre>
             upColor: "#ef4444", downColor: "#2563eb", borderVisible: false, wickUpColor: "#ef4444", wickDownColor: "#2563eb"
           });
           candleSeries.setData(activeCandles);
-          candleSeries.createPriceLine({ price: s.pivot, color: "#2563eb", lineWidth: 1, lineStyle: 2, axisLabelVisible: true, title: "피벗 저항" });
-          candleSeries.createPriceLine({ price: +(s.pivot * 0.93).toFixed(2), color: "#e11d48", lineWidth: 1, lineStyle: 2, axisLabelVisible: true, title: "7% 손절선" });
+          candleSeries.createPriceLine({ price: s.pivot, color: "#2563eb", lineWidth: 1, lineStyle: 2, axisLabelVisible: false, title: "" });
+          candleSeries.createPriceLine({ price: +(s.pivot * 0.93).toFixed(2), color: "#e11d48", lineWidth: 1, lineStyle: 2, axisLabelVisible: false, title: "" });
 
           if (state.setupSmaOverlay) {
-            const addSmaLine = (period, colorHex, title) => {
+            const addSmaLine = (period, colorHex, mapIdx) => {
               if (activeCandles.length < period) return;
-              const line = tvChartInst.addLineSeries({ color: colorHex, lineWidth: 1.5, priceLineVisible: false, lastValueVisible: true, title });
+              const line = tvChartInst.addLineSeries({ color: colorHex, lineWidth: 1.5, priceLineVisible: false, lastValueVisible: false });
               const pts = [];
               let sum = 0;
               for (let i = 0; i < activeCandles.length; i++) {
                 sum += activeCandles[i].close;
                 if (i >= period) sum -= activeCandles[i - period].close;
-                if (i >= period - 1) pts.push({ time: activeCandles[i].time, value: +(sum / period).toFixed(2) });
+                if (i >= period - 1) {
+                  const val = +(sum / period).toFixed(2);
+                  pts.push({ time: activeCandles[i].time, value: val });
+                  maValMaps[mapIdx][activeCandles[i].time] = val;
+                }
               }
               line.setData(pts);
             };
-            addSmaLine(50, "#0284c7", "50일선");
-            addSmaLine(150, "#9333ea", "150일선");
-            addSmaLine(200, "#d97706", "200일선");
+            addSmaLine(maPeriods[0], "#0284c7", 0);
+            addSmaLine(maPeriods[1], "#9333ea", 1);
+            addSmaLine(maPeriods[2], "#d97706", 2);
           }
 
-          const volSeries = tvChartInst.addHistogramSeries({ color: "#94a3b8", priceFormat: { type: "volume" }, priceScaleId: "" });
+          const volSeries = tvChartInst.addHistogramSeries({ color: "#94a3b8", priceFormat: { type: "volume" }, priceScaleId: "", lastValueVisible: false, priceLineVisible: false });
           volSeries.priceScale().applyOptions({ scaleMargins: { top: 0.8, bottom: 0 } });
           volSeries.setData(activeCandles.map(c => ({ time: c.time, value: c.volume, color: c.close >= c.open ? "rgba(239,68,68,0.35)" : "rgba(37,99,235,0.35)" })));
           mainSeries = candleSeries;
@@ -1701,6 +1762,9 @@ python -m unittest discover -s tests -v</pre>
           document.getElementById("hud-l").textContent = `$${bar.low.toFixed(2)}`;
           document.getElementById("hud-c").textContent = `$${bar.close.toFixed(2)}`;
           document.getElementById("hud-v").textContent = Number(bar.volume || 0).toLocaleString();
+          document.getElementById("mts-ma1-val").textContent = maValMaps[0][bar.time] ? `$${maValMaps[0][bar.time]}` : "-";
+          document.getElementById("mts-ma2-val").textContent = maValMaps[1][bar.time] ? `$${maValMaps[1][bar.time]}` : "-";
+          document.getElementById("mts-ma3-val").textContent = maValMaps[2][bar.time] ? `$${maValMaps[2][bar.time]}` : "-";
         };
         updateHud(activeCandles[activeCandles.length - 1]);
         tvChartInst.subscribeCrosshairMove(param => {
@@ -1708,20 +1772,23 @@ python -m unittest discover -s tests -v</pre>
         });
         tvChartInst.timeScale().fitContent();
 
-        // Render TraderLion-style RS Line Panel above Candlestick Chart
+        // Render TraderLion RS Line Panel above Candlestick Chart (with top-left MTS legend & clean right axis)
         const rsContainer = document.getElementById("tv-rs-chart");
         if (tvRsChartInst) { tvRsChartInst.remove(); tvRsChartInst = null; }
-        const activeSpyArr = (useLong && useLong.spy_prices && useLong.spy_prices[0]) ? useLong.spy_prices : SPY_60.slice(-activeCandles.length);
-        const rsBase = (activeCandles[0]?.close && activeSpyArr[0]) ? (activeCandles[0].close / activeSpyArr[0]) : 1;
-        const rsVals = activeCandles.map((c, idx) => {
-          const sp = activeSpyArr[idx];
+        const rawSpyArr = (useLong && useLong.spy_prices && useLong.spy_prices[0]) ? useLong.spy_prices : SPY_60.slice(-rawDailyCandles.length);
+        const spyByDate = {};
+        rawDailyCandles.forEach((c, i) => { if (rawSpyArr[i]) spyByDate[c.time] = rawSpyArr[i]; });
+
+        const rsBase = (activeCandles[0]?.close && spyByDate[activeCandles[0]?.time]) ? (activeCandles[0].close / spyByDate[activeCandles[0].time]) : 1;
+        const rsVals = activeCandles.map(c => {
+          const sp = spyByDate[c.time];
           return (sp && sp > 0) ? +(((c.close / sp) / rsBase) * 100).toFixed(2) : null;
         });
-        const maPeriod = activeCandles.length >= 60 ? 50 : 15;
+        const rsMaPeriod = state.setupTf === "D" ? (activeCandles.length >= 60 ? 50 : 15) : (state.setupTf === "W" ? 10 : 6);
         const rsMa = rsVals.map((_, idx) => {
-          if (idx < maPeriod - 1) return null;
+          if (idx < rsMaPeriod - 1) return null;
           let sum = 0, cnt = 0;
-          for (let j = idx - maPeriod + 1; j <= idx; j++) {
+          for (let j = idx - rsMaPeriod + 1; j <= idx; j++) {
             if (rsVals[j] !== null) { sum += rsVals[j]; cnt++; }
           }
           return cnt > 0 ? +(sum / cnt).toFixed(2) : null;
@@ -1735,17 +1802,18 @@ python -m unittest discover -s tests -v</pre>
           timeScale: { visible: false, borderColor: "#e2e8f0" },
           rightPriceScale: { borderColor: "#e2e8f0" }
         });
-        const rsLineSeries = tvRsChartInst.addLineSeries({ lineWidth: 2, title: "RS Line" });
-        const rsMaSeries = tvRsChartInst.addLineSeries({ color: "#ef4444", lineWidth: 1.5, title: `RS MA(${maPeriod})` });
+        const rsLineSeries = tvRsChartInst.addLineSeries({ lineWidth: 2, lastValueVisible: false, priceLineVisible: false });
+        const rsMaSeries = tvRsChartInst.addLineSeries({ color: "#ef4444", lineWidth: 1.5, lastValueVisible: false, priceLineVisible: false });
 
-        const rsData = [], rsMaData = [], rsMarkers = [];
+        const rsData = [], rsMaData = [], rsMarkers = [], rsMap = {}, rsMaMap = {};
         let rollingMax = -Infinity;
         for (let i = 0; i < activeCandles.length; i++) {
           const v = rsVals[i], m = rsMa[i], t = activeCandles[i].time;
           if (v === null) continue;
           const clr = (m !== null && v < m) ? "#ec4899" : "#2563eb";
           rsData.push({ time: t, value: v, color: clr });
-          if (m !== null) rsMaData.push({ time: t, value: m });
+          rsMap[t] = v;
+          if (m !== null) { rsMaData.push({ time: t, value: m }); rsMaMap[t] = m; }
           if (i >= 20 && v > rollingMax) {
             rollingMax = v;
             rsMarkers.push({ time: t, position: "aboveBar", color: "#10b981", shape: "circle", size: 0.7 });
@@ -1759,10 +1827,18 @@ python -m unittest discover -s tests -v</pre>
         tvRsChartInst.timeScale().fitContent();
 
         document.getElementById("rs-rank-pill").textContent = `RS ${s.system_rs_rank}`;
-        const lastRs = rsData[rsData.length - 1]?.value ?? "-";
-        document.getElementById("rs-hud-val").textContent = `RS Line: ${lastRs}`;
+        const lastT = activeCandles[activeCandles.length - 1]?.time;
+        document.getElementById("rs-hud-val").textContent = `RS Line: ${rsMap[lastT] ?? "-"}`;
+        document.getElementById("mts-rs-val").textContent = rsMap[lastT] ?? "-";
+        document.getElementById("mts-rsma-val").textContent = rsMaMap[lastT] ?? "-";
 
-        // Sync zoom & pan between Candle Chart and RS Line Chart
+        tvRsChartInst.subscribeCrosshairMove(param => {
+          if (param && param.time && rsMap[param.time] !== undefined) {
+            document.getElementById("mts-rs-val").textContent = rsMap[param.time];
+            document.getElementById("mts-rsma-val").textContent = rsMaMap[param.time] ?? "-";
+          }
+        });
+
         let syncing = false;
         tvChartInst.timeScale().subscribeVisibleLogicalRangeChange(range => {
           if (syncing || !range || !tvRsChartInst) return;
@@ -1776,23 +1852,9 @@ python -m unittest discover -s tests -v</pre>
           tvChartInst.timeScale().setVisibleLogicalRange(range);
           syncing = false;
         });
-      } else {
-        tvWrap.classList.add("hidden");
-        fbWrap.classList.remove("hidden");
-        const ctx = document.getElementById("setupChart").getContext("2d");
-        if (setupChartInst) setupChartInst.destroy();
-        const activeSpy = (useLong && useLong.spy_prices && useLong.spy_prices[0]) ? useLong.spy_prices : SPY_60;
-        const labels = activeCandles.map(c => c.time);
-        const datasets = state.setupSpyOverlay
-          ? [
-              { label: `${s.ticker} (%)`, data: activePrices.map(p => +(((p - activePrices[0]) / activePrices[0]) * 100).toFixed(2)), borderColor: "#0f172a", borderWidth: 2.5, tension: 0.15, pointRadius: 0 },
-              { label: "SPY (%)", data: activeSpy.map(p => p ? +(((p - activeSpy[0]) / activeSpy[0]) * 100).toFixed(2) : null), borderColor: "#f59e0b", borderDash: [4, 4], borderWidth: 2, tension: 0.15, pointRadius: 0 }
-            ]
-          : [{ label: `${s.ticker} 종가 ($)`, data: activePrices, borderColor: "#0f172a", borderWidth: 2.5, tension: 0.15, pointRadius: 0 }];
-        setupChartInst = new Chart(ctx, { type: "line", data: { labels, datasets }, options: { responsive: true, maintainAspectRatio: false, interaction: { mode: "index", intersect: false } } });
       }
 
-      // Auto-fetch real OHLCV candles (Open/High/Low/Close/Volume + SPY) for current period including 1y & 2y
+      // Auto-fetch real OHLCV candles
       if ((!s.longCache || !s.longCache[state.setupPeriod]) && (window.location.protocol.startsWith("http"))) {
         const reqTicker = s.ticker, reqPeriod = state.setupPeriod;
         const sliceByPeriod = (d, p) => {
@@ -1822,7 +1884,6 @@ python -m unittest discover -s tests -v</pre>
           .catch(() => {});
       }
 
-      // Fetch real Annual & Quarterly Financials on-demand if running via start_dashboard.bat
       if (!s.finData && (window.location.protocol.startsWith("http"))) {
         fetch(`api/financials?ticker=${encodeURIComponent(s.ticker)}`)
           .then(r => r.ok ? r.json() : null)
@@ -2038,6 +2099,16 @@ python -m unittest discover -s tests -v</pre>
         });
         const s = stocks.find(x => x.ticker === state.selectedTicker) || stocks[0];
         if (s) renderFinancialPanel(s);
+      });
+    });
+    document.querySelectorAll(".setup-tf-btn").forEach(btn => {
+      btn.addEventListener("click", () => {
+        state.setupTf = btn.dataset.tf;
+        document.querySelectorAll(".setup-tf-btn").forEach(b => {
+          const act = b.dataset.tf === state.setupTf;
+          b.className = `setup-tf-btn px-2 py-1 rounded-md ${act ? "font-semibold bg-white text-slate-900 shadow-sm" : "font-medium text-slate-600 hover:text-slate-900"}`;
+        });
+        renderSetupsTab();
       });
     });
     document.querySelectorAll(".setup-period-btn").forEach(btn => {
