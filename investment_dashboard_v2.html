@@ -400,7 +400,7 @@
               <button data-period="max" class="setup-period-btn px-2.5 py-1 rounded-md font-medium text-slate-600 hover:text-slate-900">전체(MAX)</button>
             </div>
             <label class="inline-flex items-center gap-1 bg-slate-50 px-2.5 py-1 rounded-lg border border-slate-200 cursor-pointer">
-              <input id="chk-sma-overlay" type="checkbox" checked /> 이평선(50/150/200)
+              <input id="chk-sma-overlay" type="checkbox" checked /> 이평선(10/20/50/150/200)
             </label>
             <label class="inline-flex items-center gap-1 bg-slate-50 px-2.5 py-1 rounded-lg border border-slate-200 cursor-pointer">
               <input id="chk-spy-overlay" type="checkbox" /> SPY 상대비교(%)
@@ -423,9 +423,11 @@
         <!-- Lightweight Charts Container (with Chart.js fallback container if needed) -->
         <div id="tv-chart-wrap" class="relative h-72 md:h-96 w-full border border-slate-200 rounded-xl overflow-hidden bg-white">
           <div id="candle-mts-legend" class="absolute top-1.5 left-2 z-10 pointer-events-none flex flex-wrap gap-2.5 text-[11px] font-semibold bg-white/85 px-2 py-0.5 rounded border border-slate-200/80 tabular-nums">
-            <span class="text-sky-600">● <span id="mts-ma1-lbl">50일선</span>: <span id="mts-ma1-val">-</span></span>
-            <span class="text-purple-600">● <span id="mts-ma2-lbl">150일선</span>: <span id="mts-ma2-val">-</span></span>
-            <span class="text-amber-600">● <span id="mts-ma3-lbl">200일선</span>: <span id="mts-ma3-val">-</span></span>
+            <span class="text-emerald-600">● <span id="mts-ma1-lbl">10일선</span>: <span id="mts-ma1-val">-</span></span>
+            <span class="text-pink-600">● <span id="mts-ma2-lbl">20일선</span>: <span id="mts-ma2-val">-</span></span>
+            <span class="text-sky-600">● <span id="mts-ma3-lbl">50일선</span>: <span id="mts-ma3-val">-</span></span>
+            <span class="text-purple-600">● <span id="mts-ma4-lbl">150일선</span>: <span id="mts-ma4-val">-</span></span>
+            <span class="text-amber-600">● <span id="mts-ma5-lbl">200일선</span>: <span id="mts-ma5-val">-</span></span>
             <span class="text-blue-700">-- 피벗: <span id="mts-piv-val">-</span></span>
             <span class="text-rose-600">-- 7%손절: <span id="mts-stp-val">-</span></span>
           </div>
@@ -1681,10 +1683,12 @@ python -m unittest discover -s tests -v</pre>
           </div>
 
           <div class="bg-white p-2.5 rounded-xl border ${c2Pass ? "border-emerald-200" : "border-slate-200"}">
-            <div><strong class="text-slate-900">2. 60일 3단계 수축 (T1 &gt; T2 ≥ T3):</strong> ${badgeHtml(c2Pass)}</div>
+            <div class="flex items-center justify-between gap-2">
+              <div><strong class="text-slate-900">2. 60일 3단계 수축 (T1 &gt; T2 ≥ T3):</strong> ${badgeHtml(c2Pass)}</div>
+              <button type="button" onclick="openVcpDetailModal('contraction')" class="shrink-0 whitespace-nowrap px-2 py-0.5 rounded-md bg-slate-100 hover:bg-indigo-50 text-indigo-700 font-semibold text-[10px] border border-slate-200 hover:border-indigo-200 transition">상세 이유 확인</button>
+            </div>
             <div class="text-[10px] text-slate-700 font-medium mt-0.5 tabular-nums">${tSeqHtml}</div>
             <div class="text-[10px] text-slate-600 mt-1">* <strong>왜 폭이 갈수록 줄어야 하나?</strong> 조정이 반복될수록 급히 팔고 나가는 약한 손(단타 물량)이 털려나가면서 주가 흔들림이 자연스럽게 작아지기 때문입니다.</div>
-            <div class="mt-2"><button type="button" onclick="openVcpDetailModal('contraction')" class="inline-flex items-center gap-1 px-2 py-1 rounded-lg bg-slate-100 hover:bg-indigo-50 text-indigo-700 font-semibold text-[10px] border border-slate-200 hover:border-indigo-200 transition">상세 이유 확인하기 (미너비니 수축 원리)</button></div>
           </div>
 
           <div class="bg-white p-2.5 rounded-xl border ${c3Pass ? "border-emerald-200" : "border-slate-200"}">
@@ -1703,9 +1707,11 @@ python -m unittest discover -s tests -v</pre>
           </div>
 
           <div class="bg-white p-2.5 rounded-xl border ${c6Pass ? "border-emerald-200" : "border-slate-200"}">
-            <div><strong class="text-slate-900">6. 피벗 돌파 + 거래량 급증 (종가 돌파 &amp; 1.40배↑):</strong> <span class="font-bold">${curVolRatio}배</span> ${badgeHtml(c6Pass, "돌파 충족", "돌파 대기/미달")}</div>
+            <div class="flex items-center justify-between gap-2">
+              <div><strong class="text-slate-900">6. 피벗 돌파 + 거래량 급증 (종가 돌파 &amp; 1.40배↑):</strong> <span class="font-bold">${curVolRatio}배</span> ${badgeHtml(c6Pass, "돌파 충족", "돌파 대기/미달")}</div>
+              <button type="button" onclick="openVcpDetailModal('breakout')" class="shrink-0 whitespace-nowrap px-2 py-0.5 rounded-md bg-slate-100 hover:bg-indigo-50 text-indigo-700 font-semibold text-[10px] border border-slate-200 hover:border-indigo-200 transition">추가 확인 내용</button>
+            </div>
             <div class="text-[10px] text-slate-600 mt-1">* <strong>왜 돌파 시 거래량이 터져야 하나?</strong> 거래량 없는 상승은 개인들의 속임수 반등일 수 있습니다. 1.40배 이상의 거래량이 실려야 기관의 진짜 매집 돌파로 인정합니다.</div>
-            <div class="mt-2"><button type="button" onclick="openVcpDetailModal('breakout')" class="inline-flex items-center gap-1 px-2 py-1 rounded-lg bg-slate-100 hover:bg-indigo-50 text-indigo-700 font-semibold text-[10px] border border-slate-200 hover:border-indigo-200 transition">추가 확인할 내용 (돌파 당일·다음날 대응)</button></div>
           </div>
         </div>
       `;
@@ -1732,12 +1738,18 @@ python -m unittest discover -s tests -v</pre>
         });
 
         let mainSeries = null;
-        const maValMaps = [{}, {}, {}];
-        const maPeriods = state.setupTf === "D" ? [50, 150, 200] : state.setupTf === "W" ? [10, 30, 40] : [6, 12, 24];
+        const maValMaps = [{}, {}, {}, {}, {}];
+        const maPeriods = state.setupTf === "D" ? [10, 20, 50, 150, 200] : state.setupTf === "W" ? [5, 10, 20, 30, 40] : [3, 6, 12, 24, 36];
         const maUnit = state.setupTf === "D" ? "일선" : state.setupTf === "W" ? "주선" : "개월선";
         document.getElementById("mts-ma1-lbl").textContent = `${maPeriods[0]}${maUnit}`;
         document.getElementById("mts-ma2-lbl").textContent = `${maPeriods[1]}${maUnit}`;
         document.getElementById("mts-ma3-lbl").textContent = `${maPeriods[2]}${maUnit}`;
+        document.getElementById("mts-ma4-lbl").textContent = `${maPeriods[3]}${maUnit}`;
+        document.getElementById("mts-ma5-lbl").textContent = `${maPeriods[4]}${maUnit}`;
+        const fullDailyForSma = (s.longCache && s.longCache._full && Array.isArray(s.longCache._full.candles) && s.longCache._full.candles.length > rawDailyCandles.length)
+          ? s.longCache._full.candles : rawDailyCandles;
+        const smaBaseCandles = resampleCandles(fullDailyForSma, state.setupTf);
+        const minVisibleTime = activeCandles.length ? activeCandles[0].time : "";
 
         const rawSpyAll = (useLong && useLong.spy_prices && useLong.spy_prices[0]) ? useLong.spy_prices : SPY_60.slice(-rawDailyCandles.length);
         const spyMapByDate = {};
@@ -1747,22 +1759,24 @@ python -m unittest discover -s tests -v</pre>
           spyMapByDate[c.time] = lastValidSpy;
         });
 
-        const addSmaSeries = (seriesList, period, colorHex, mapIdx, transformFn) => {
+        const addSmaSeries = (seriesList, period, colorHex, mapIdx, transformFn, lw = 1.5) => {
           if (seriesList.length < period) return;
-          const line = tvChartInst.addLineSeries({ color: colorHex, lineWidth: 1.5, priceLineVisible: false, lastValueVisible: false });
+          const line = tvChartInst.addLineSeries({ color: colorHex, lineWidth: lw, priceLineVisible: false, lastValueVisible: false });
           const pts = [];
           let sum = 0;
           for (let i = 0; i < seriesList.length; i++) {
             sum += seriesList[i].close;
             if (i >= period) sum -= seriesList[i - period].close;
             if (i >= period - 1) {
+              const t = seriesList[i].time;
+              if (minVisibleTime && t < minVisibleTime) continue;
               const rawVal = sum / period;
               const val = +(transformFn ? transformFn(rawVal) : rawVal).toFixed(2);
-              pts.push({ time: seriesList[i].time, value: val });
-              maValMaps[mapIdx][seriesList[i].time] = val;
+              pts.push({ time: t, value: val });
+              maValMaps[mapIdx][t] = val;
             }
           }
-          line.setData(pts);
+          if (pts.length) line.setData(pts);
         };
 
         if (state.setupSpyOverlay) {
@@ -1779,9 +1793,11 @@ python -m unittest discover -s tests -v</pre>
           candlePctSeries.createPriceLine({ price: toPct(s.pivot * 0.93), color: "#e11d48", lineWidth: 1, lineStyle: 2, axisLabelVisible: false, title: "" });
 
           if (state.setupSmaOverlay) {
-            addSmaSeries(activeCandles, maPeriods[0], "#0284c7", 0, toPct);
-            addSmaSeries(activeCandles, maPeriods[1], "#9333ea", 1, toPct);
-            addSmaSeries(activeCandles, maPeriods[2], "#d97706", 2, toPct);
+            addSmaSeries(smaBaseCandles, maPeriods[0], "#10b981", 0, toPct, 1);
+            addSmaSeries(smaBaseCandles, maPeriods[1], "#ec4899", 1, toPct, 1);
+            addSmaSeries(smaBaseCandles, maPeriods[2], "#0284c7", 2, toPct, 1.5);
+            addSmaSeries(smaBaseCandles, maPeriods[3], "#9333ea", 3, toPct, 1.5);
+            addSmaSeries(smaBaseCandles, maPeriods[4], "#d97706", 4, toPct, 1.5);
           }
 
           const spyPctSeries = tvChartInst.addLineSeries({ color: "#f59e0b", lineWidth: 2, lineStyle: 2, lastValueVisible: false, priceLineVisible: false });
@@ -1799,9 +1815,11 @@ python -m unittest discover -s tests -v</pre>
           candleSeries.createPriceLine({ price: +(s.pivot * 0.93).toFixed(2), color: "#e11d48", lineWidth: 1, lineStyle: 2, axisLabelVisible: false, title: "" });
 
           if (state.setupSmaOverlay) {
-            addSmaSeries(activeCandles, maPeriods[0], "#0284c7", 0, null);
-            addSmaSeries(activeCandles, maPeriods[1], "#9333ea", 1, null);
-            addSmaSeries(activeCandles, maPeriods[2], "#d97706", 2, null);
+            addSmaSeries(smaBaseCandles, maPeriods[0], "#10b981", 0, null, 1);
+            addSmaSeries(smaBaseCandles, maPeriods[1], "#ec4899", 1, null, 1);
+            addSmaSeries(smaBaseCandles, maPeriods[2], "#0284c7", 2, null, 1.5);
+            addSmaSeries(smaBaseCandles, maPeriods[3], "#9333ea", 3, null, 1.5);
+            addSmaSeries(smaBaseCandles, maPeriods[4], "#d97706", 4, null, 1.5);
           }
 
           const volSeries = tvChartInst.addHistogramSeries({ color: "#94a3b8", priceFormat: { type: "volume" }, priceScaleId: "", lastValueVisible: false, priceLineVisible: false });
@@ -1819,9 +1837,12 @@ python -m unittest discover -s tests -v</pre>
           document.getElementById("hud-l").textContent = `$${bar.low.toFixed(2)}`;
           document.getElementById("hud-c").textContent = `$${bar.close.toFixed(2)}`;
           document.getElementById("hud-v").textContent = Number(bar.volume || 0).toLocaleString();
-          const uSuffix = state.setupSpyOverlay ? "%" : ""; const uPre = state.setupSpyOverlay ? "" : "$"; document.getElementById("mts-ma1-val").textContent = maValMaps[0][bar.time] !== undefined ? `${uPre}${maValMaps[0][bar.time]}${uSuffix}` : "-";
+          const uSuffix = state.setupSpyOverlay ? "%" : ""; const uPre = state.setupSpyOverlay ? "" : "$";
+          document.getElementById("mts-ma1-val").textContent = maValMaps[0][bar.time] !== undefined ? `${uPre}${maValMaps[0][bar.time]}${uSuffix}` : "-";
           document.getElementById("mts-ma2-val").textContent = maValMaps[1][bar.time] !== undefined ? `${uPre}${maValMaps[1][bar.time]}${uSuffix}` : "-";
           document.getElementById("mts-ma3-val").textContent = maValMaps[2][bar.time] !== undefined ? `${uPre}${maValMaps[2][bar.time]}${uSuffix}` : "-";
+          document.getElementById("mts-ma4-val").textContent = maValMaps[3][bar.time] !== undefined ? `${uPre}${maValMaps[3][bar.time]}${uSuffix}` : "-";
+          document.getElementById("mts-ma5-val").textContent = maValMaps[4][bar.time] !== undefined ? `${uPre}${maValMaps[4][bar.time]}${uSuffix}` : "-";
         };
         updateHud(activeCandles[activeCandles.length - 1]);
         tvChartInst.subscribeCrosshairMove(param => {
@@ -1932,6 +1953,7 @@ python -m unittest discover -s tests -v</pre>
           .then(d => {
             if (d && Array.isArray(d.candles) && d.candles.length) {
               s.longCache = s.longCache || {};
+              s.longCache._full = d;
               s.longCache[reqPeriod] = sliceByPeriod(d, reqPeriod);
               if (state.selectedTicker === reqTicker && state.setupPeriod === reqPeriod && state.activeTab === "setups") {
                 renderSetupsTab();
