@@ -96,36 +96,51 @@
             </div>
           </div>
         </div>
-        <div id="regime-plain-guide" class="text-xs text-slate-700 bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 leading-relaxed">
-          <strong>해석:</strong> SPY와 QQQ가 혼조세이므로 완벽한 패턴(VCP)과 거래량 돌파가 확인된 최상위 주도주에만 소액으로 선별 진입하세요.
+        <div id="regime-plain-guide" class="text-xs text-slate-700 bg-indigo-50/70 border border-indigo-200 rounded-xl px-3.5 py-2.5 leading-relaxed">
+          <div class="font-bold text-indigo-950 mb-0.5">오늘의 미너비니식 시장 총평 (수집 데이터 기반 자동 브리핑)</div>
+          <div id="dash-minervini-brief">데이터를 불러오면 오늘 지수(SPY·QQQ) 위치, 시장 폭, 상승추세 합격 종목 수를 바탕으로 미너비니 관점의 시장 해석과 행동 지침이 표시됩니다.</div>
         </div>
       </div>
 
-      <!-- KPI Strip (All Clickable Filters) -->
-      <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
-        <button id="card-kpi-watch" type="button" class="text-left bg-white border border-slate-200 rounded-2xl p-4 shadow-sm hover:ring-2 hover:ring-amber-400 transition cursor-pointer">
-          <div class="text-xs font-semibold text-slate-700">내 관심종목 (클릭 필터)</div><div class="text-[10px] text-slate-400">별표(★)로 찜한 종목</div>
-          <div id="dash-kpi-watch" class="text-2xl font-bold text-amber-600 tabular-nums mt-1">0</div>
+      <!-- KPI Strip (Slimmed for compact layout; Click to filter list) -->
+      <div class="grid grid-cols-2 lg:grid-cols-5 gap-2.5">
+        <button id="card-kpi-watch" type="button" class="text-left bg-white border border-slate-200 rounded-xl px-3 py-2.5 shadow-sm hover:ring-2 hover:ring-amber-400 transition cursor-pointer">
+          <div class="flex items-center justify-between gap-2">
+            <span class="text-xs font-semibold text-slate-700">내 관심종목</span>
+            <span id="dash-kpi-watch" class="text-lg font-bold text-amber-600 tabular-nums">0</span>
+          </div>
+          <div class="text-[10px] text-slate-400 truncate">별표(★)로 찜한 종목 (클릭 필터)</div>
         </button>
-        <button id="card-kpi-tt" type="button" class="text-left bg-white border border-slate-200 rounded-2xl p-4 shadow-sm hover:ring-2 hover:ring-emerald-400 transition cursor-pointer">
-          <div class="text-xs font-semibold text-slate-700">상승추세 합격 (클릭 필터)</div><div class="text-[10px] text-slate-400">10가지 추세 조건 모두 통과</div>
-          <div id="dash-kpi-tt" class="text-2xl font-bold text-emerald-600 tabular-nums mt-1">0</div>
+        <button id="card-kpi-tt" type="button" class="text-left bg-white border border-slate-200 rounded-xl px-3 py-2.5 shadow-sm hover:ring-2 hover:ring-emerald-400 transition cursor-pointer">
+          <div class="flex items-center justify-between gap-2">
+            <span class="text-xs font-semibold text-slate-700">상승추세 합격</span>
+            <span id="dash-kpi-tt" class="text-lg font-bold text-emerald-600 tabular-nums">0</span>
+          </div>
+          <div class="text-[10px] text-slate-400 truncate">10가지 추세 조건 통과 (클릭 필터)</div>
         </button>
-        <button id="card-kpi-near" type="button" class="text-left bg-white border border-slate-200 rounded-2xl p-4 shadow-sm hover:ring-2 hover:ring-blue-400 transition cursor-pointer">
-          <div class="text-xs font-semibold text-slate-700">돌파 임박 (클릭 필터)</div><div class="text-[10px] text-slate-400">저항선까지 3% 이내 접근</div>
-          <div id="dash-kpi-near" class="text-2xl font-bold text-blue-600 tabular-nums mt-1">0</div>
+        <button id="card-kpi-near" type="button" class="text-left bg-white border border-slate-200 rounded-xl px-3 py-2.5 shadow-sm hover:ring-2 hover:ring-blue-400 transition cursor-pointer">
+          <div class="flex items-center justify-between gap-2">
+            <span class="text-xs font-semibold text-slate-700">돌파 임박</span>
+            <span id="dash-kpi-near" class="text-lg font-bold text-blue-600 tabular-nums">0</span>
+          </div>
+          <div class="text-[10px] text-slate-400 truncate">저항선 3% 이내 접근 (클릭 필터)</div>
         </button>
-        <button id="card-kpi-eod" type="button" class="text-left bg-white border border-slate-200 rounded-2xl p-4 shadow-sm hover:ring-2 hover:ring-indigo-400 transition cursor-pointer">
-          <div class="text-xs font-semibold text-slate-700">돌파 확인됨 (클릭 필터)</div><div class="text-[10px] text-slate-400">종가 돌파 + 거래량 1.4배↑</div>
-          <div id="dash-kpi-eod" class="text-2xl font-bold text-indigo-600 tabular-nums mt-1">0</div>
+        <button id="card-kpi-eod" type="button" class="text-left bg-white border border-slate-200 rounded-xl px-3 py-2.5 shadow-sm hover:ring-2 hover:ring-indigo-400 transition cursor-pointer">
+          <div class="flex items-center justify-between gap-2">
+            <span class="text-xs font-semibold text-slate-700">돌파 확인됨</span>
+            <span id="dash-kpi-eod" class="text-lg font-bold text-indigo-600 tabular-nums">0</span>
+          </div>
+          <div class="text-[10px] text-slate-400 truncate">종가 돌파 + 거래량 1.4배↑</div>
         </button>
-        <button id="card-kpi-warn" type="button" class="text-left bg-white border border-slate-200 rounded-2xl p-4 shadow-sm hover:ring-2 hover:ring-rose-400 transition cursor-pointer">
-          <div class="text-xs font-semibold text-slate-700">손절 위험 경고 (보유탭 이동)</div><div class="text-[10px] text-slate-400">손절선 이탈 보유 종목</div>
-          <div id="dash-kpi-warn" class="text-2xl font-bold text-rose-600 tabular-nums mt-1">0</div>
+        <button id="card-kpi-warn" type="button" class="text-left bg-white border border-slate-200 rounded-xl px-3 py-2.5 shadow-sm hover:ring-2 hover:ring-rose-400 transition cursor-pointer col-span-2 lg:col-span-1">
+          <div class="flex items-center justify-between gap-2">
+            <span class="text-xs font-semibold text-slate-700">손절 위험 경고</span>
+            <span id="dash-kpi-warn" class="text-lg font-bold text-rose-600 tabular-nums">0</span>
+          </div>
+          <div class="text-[10px] text-slate-400 truncate">손절선 이탈 보유 종목 (보유탭)</div>
         </button>
       </div>
 
-      <!-- Priority Candidate Table + Quick Detail -->
       <div class="grid grid-cols-1 xl:grid-cols-12 gap-5 items-stretch">
         <div class="xl:col-span-8 bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden flex flex-col">
           <div class="px-4 py-3 border-b border-slate-200 flex flex-wrap items-center justify-between gap-2">
@@ -206,61 +221,75 @@
 
     <!-- ==================== TAB 2: MARKET & LEADERSHIP ==================== -->
     <section id="tab-market" class="tab-panel hidden space-y-5">
+      <!-- 1. Index Health Cards (Plain Korean) -->
       <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
         <div class="bg-white border border-slate-200 rounded-2xl p-4 shadow-sm">
-          <div class="text-xs text-slate-500">SPY (S&amp;P 500) — SYSTEM_FTD_PROXY</div>
+          <div class="text-xs font-semibold text-slate-500">SPY (미국 대표 500대 기업 · 시장 큰 흐름)</div>
           <div id="mkt-spy-trend" class="text-base font-bold text-slate-900 mt-1">데이터 대기</div>
-          <div id="mkt-spy-ftd" class="text-xs text-slate-600 mt-1 leading-relaxed">-</div>
+          <div id="mkt-spy-ftd" class="text-xs text-slate-600 mt-1.5 leading-relaxed">-</div>
         </div>
         <div class="bg-white border border-slate-200 rounded-2xl p-4 shadow-sm">
-          <div class="text-xs text-slate-500">QQQ (Nasdaq 100) — SYSTEM_FTD_PROXY</div>
+          <div class="text-xs font-semibold text-slate-500">QQQ (나스닥 100 · 성장주·기술주 체감 온도)</div>
           <div id="mkt-qqq-trend" class="text-base font-bold text-slate-900 mt-1">데이터 대기</div>
-          <div id="mkt-qqq-ftd" class="text-xs text-slate-600 mt-1 leading-relaxed">-</div>
+          <div id="mkt-qqq-ftd" class="text-xs text-slate-600 mt-1.5 leading-relaxed">-</div>
         </div>
         <div class="bg-white border border-slate-200 rounded-2xl p-4 shadow-sm">
-          <div class="text-xs text-slate-500">IWM (Russell 2000 보조지수)</div>
-          <div class="text-lg font-bold text-slate-900 mt-1">중소형주 시장 폭 참고</div>
-          <div class="text-xs text-slate-500 mt-1">광범위한 랠리 확산 여부 확인용</div>
+          <div class="text-xs font-semibold text-slate-500">미너비니가 지수를 먼저 보는 이유</div>
+          <div class="text-base font-bold text-slate-900 mt-1">강한 주도주도 시장 75%를 따라감</div>
+          <div class="text-xs text-slate-600 mt-1.5 leading-relaxed">아무리 좋은 종목이라도 시장 전체가 하락장(200일선 아래)이면 돌파 후 70% 이상 실패합니다. <strong>지수가 50일·200일선 위에 있을 때만</strong> 매수 비중을 늘립니다.</div>
         </div>
       </div>
 
+      <!-- 2. Beginner-Friendly Market Turn Signal & Action Guide -->
       <div class="bg-white border border-slate-200 rounded-2xl p-4 sm:p-5 shadow-sm space-y-3">
         <div class="flex flex-wrap items-center justify-between gap-2">
-          <h3 class="text-sm font-bold text-slate-900">IBD Follow-Through Day(FTD) 품질 &amp; 미너비니 현 시장 대입</h3>
-          <span class="px-2 py-0.5 rounded bg-slate-100 text-[11px] font-semibold text-slate-600">참고 신호 (SYSTEM_FTD_PROXY · 공식 IBD 아님)</span>
+          <h3 class="text-sm font-bold text-slate-900">시장 전환 신호(상승 전환일·기관 매도일) 해석 &amp; 오늘 내 행동 지침</h3>
+          <span class="px-2 py-0.5 rounded bg-slate-100 text-[11px] font-semibold text-slate-600">초보자 실전 판독 가이드</span>
         </div>
-        <div id="mkt-ftd-live-diagnosis" class="p-3.5 rounded-xl bg-slate-50 border border-slate-200 text-xs text-slate-700 leading-relaxed">
-          데이터 로드 시 현재 SPY·QQQ의 실제 FTD 유사 신호 발생일, 저점 방어 여부, 이후 분산일(기관 매도일) 누적 상태를 자동 판독해 표시합니다.
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-2.5 text-[11px] bg-slate-50 p-3 rounded-xl border border-slate-200 leading-relaxed">
+          <div><strong class="text-emerald-800">① 상승 전환일 (FTD)이란?</strong> 하락하던 시장이 바닥을 찍고, <strong>반등 4~7일째 거래량이 전날보다 터지며 지수가 크게 오르는 날</strong>입니다. 기관 자금이 다시 들어오기 시작했다는 첫 신호탄입니다.</div>
+          <div><strong class="text-rose-800">② 기관 매도일 (분산일)이란?</strong> 지수가 전날보다 -0.2% 이상 떨어졌는데 <strong>거래량은 오히려 늘어난 날</strong>입니다. 기관이 몰래 물량을 팔고 있다는 경고등이며, 최근 25거래일 안에 4~5개 이상 쌓이면 하락 위험이 커집니다.</div>
+        </div>
+        <div id="mkt-ftd-live-diagnosis" class="p-3.5 rounded-xl bg-indigo-50/70 border border-indigo-200 text-xs text-slate-800 leading-relaxed">
+          데이터 로드 시 현재 SPY·QQQ의 위치와 최근 신호를 바탕으로 지금 현금을 지켜야 할지, 매수를 준비해야 할지 쉬운 말로 정리해 드립니다.
         </div>
         <div class="grid grid-cols-1 md:grid-cols-2 gap-3 text-xs leading-relaxed">
           <div class="p-3 rounded-xl bg-emerald-50/60 border border-emerald-200">
-            <strong class="text-emerald-900">사례 A — 유효한 FTD + 미너비니 주도주 합류 (강세 전환):</strong>
-            <p class="text-slate-700 mt-1">반등 4~7일째 지수가 거래량 증가와 함께 +1.25%↑ 급등(FTD)한 뒤, <strong>이후 5일간 분산일이 거의 없고</strong> FTD 저점을 깨지 않으며 개별주에서 <strong>상승추세(Stage 2) + VCP 피벗 돌파가 동시 다발로 성공</strong>하는 경우입니다.</p>
+            <strong class="text-emerald-900">언제 매수 버튼을 누르나요? (성공 패턴):</strong>
+            <p class="text-slate-700 mt-1">① 지수에서 상승 전환일(FTD)이 뜬 뒤 <strong>저점을 깨지 않고 버티며</strong> ② 개별 종목에서 <strong>상승추세 합격 + VCP 돌파 종목들이 실제로 +5~10% 이상 수익을 내줄 때</strong>(피드백 루프) 소액부터 비중을 늘립니다.</p>
           </div>
           <div class="p-3 rounded-xl bg-rose-50/60 border border-rose-200">
-            <strong class="text-rose-900">사례 B — FTD 이후 약세/분산일 출현 (현재와 같은 경계·실패 사례):</strong>
-            <p class="text-slate-700 mt-1">강한 상승·거래량(FTD)이 떴더라도 <strong>곧바로 거래량 실린 하락(분산일)이 2일 이상 붙거나 FTD 저점을 이탈</strong>하면 신호 품질이 크게 훼손됩니다. 미너비니는 지수 FTD만 믿고 먼저 들어가지 않고, <strong>돌파 종목들이 실제로 수익을 내주는지(피드백 루프)</strong>를 보고 비중을 조절합니다.</p>
+            <strong class="text-rose-900">언제 조심하고 쉬어야 하나요? (경계 패턴):</strong>
+            <p class="text-slate-700 mt-1">지수가 반등하더라도 <strong>곧바로 기관 매도일(분산일)이 2일 이상 붙거나 200일선 아래에서 꺾이면</strong> 속임수 반등일 확률이 높습니다. 이때는 억지로 매수하지 않고 관심종목만 추려놓고 현금을 지킵니다.</p>
           </div>
         </div>
       </div>
 
+      <!-- 3. Sector Leadership Briefing + Clickable Table -->
       <div class="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden">
-        <div class="px-5 py-3.5 border-b border-slate-200 flex items-center justify-between">
+        <div class="px-5 py-3.5 border-b border-slate-200 flex flex-wrap items-center justify-between gap-3">
           <div>
             <h2 class="text-sm font-bold text-slate-900">섹터별 주도력 &amp; RS 상위 집중도</h2>
-            <p class="text-xs text-slate-500"><strong>RS 80+ 주도주 수:</strong> S&amp;P 500과 비교한 값이 아니라, 전체 분석 종목(2,080개) 중 3·6·12개월 주가 상승률 순위가 <strong>상위 20%(80점 이상)</strong>에 드는 강한 종목 개수입니다.</p>
+            <p class="text-xs text-slate-500 mt-0.5">표의 파란 숫자(<strong>RS 80+ 주도주 수</strong>)나 초록 숫자(<strong>상승추세 합격 수</strong>)를 클릭하면 해당 섹터의 종목 목록으로 바로 이동합니다.</p>
           </div>
+          <div class="flex flex-wrap gap-2">
+            <button type="button" onclick="jumpToScreenerSector('ALL', 'rs80')" class="px-3 py-1.5 rounded-lg text-xs font-semibold bg-blue-50 text-blue-700 border border-blue-200 hover:bg-blue-100 transition">전체 RS 80+ 주도주 보기</button>
+            <button type="button" onclick="jumpToScreenerSector('ALL', 'tt')" class="px-3 py-1.5 rounded-lg text-xs font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200 hover:bg-emerald-100 transition">전체 상승추세 합격 보기</button>
+          </div>
+        </div>
+        <div id="mkt-sector-brief" class="px-5 py-3 bg-slate-50 border-b border-slate-200 text-xs text-slate-700 leading-relaxed">
+          섹터 데이터를 분석 중입니다...
         </div>
         <div class="overflow-x-auto">
           <table class="w-full text-left border-collapse text-xs">
             <thead>
-              <tr class="bg-slate-50 border-b border-slate-200 text-slate-500 font-semibold">
-                <th class="py-3 px-4">섹터 (ICB)</th>
-                <th class="py-3 px-4 text-right">종목 수</th>
-                <th class="py-3 px-4 text-right">평균 System RS</th>
-                <th class="py-3 px-4 text-right">RS 80+ 주도주 수</th>
-                <th class="py-3 px-4 text-right">상승추세 합격 수</th>
-                <th class="py-3 px-4 text-right">Emerging Leader</th>
+              <tr class="bg-slate-50 border-b border-slate-200 text-slate-500">
+                <th class="py-2.5 px-4 font-semibold">섹터 (업종)</th>
+                <th class="py-2.5 px-4 font-semibold text-right">종목 수</th>
+                <th class="py-2.5 px-4 font-semibold text-right">평균 RS</th>
+                <th class="py-2.5 px-4 font-semibold text-right">RS 80+ 주도주 수 (클릭)</th>
+                <th class="py-2.5 px-4 font-semibold text-right">상승추세 합격 수 (클릭)</th>
+                <th class="py-2.5 px-4 font-semibold text-right">RS 90+ 초강세</th>
               </tr>
             </thead>
             <tbody id="sector-tbody" class="divide-y divide-slate-100"></tbody>
@@ -338,6 +367,12 @@
               <option value="ALL">전체</option>
               <option value="PASS">PASS만 보기</option>
               <option value="FAIL">FAIL만 보기</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-xs text-slate-600 mb-1">섹터 (업종)</label>
+            <select id="sepa-sector" class="w-full px-2.5 py-1.5 text-xs border border-slate-300 rounded-lg bg-white">
+              <option value="ALL">전체 섹터</option>
             </select>
           </div>
           <div>
@@ -1155,7 +1190,7 @@ python -m unittest discover -s tests -v</pre>
       screenerMode: "sepa",
       legacyPreset: "all",
       lMaxPe: 80, lMinRoe: 0, lMinDiv: 0, scrSearch: "", scrSector: "ALL",
-      sepaSearch: "", sepaMinRs: 70, sepaTt: "ALL", sepaUni: "ELIGIBLE", sepaIncludeHc: false,
+      sepaSearch: "", sepaMinRs: 70, sepaTt: "ALL", sepaUni: "ELIGIBLE", sepaSector: "ALL", sepaIncludeHc: false,
       setupSpyOverlay: false,
       setupSmaOverlay: true,
       setupPeriod: "1y",
@@ -1227,6 +1262,30 @@ python -m unittest discover -s tests -v</pre>
       document.getElementById("dash-kpi-near").textContent = nearPivot.length;
       document.getElementById("dash-kpi-eod").textContent = eodConf.length;
       document.getElementById("dash-kpi-warn").textContent = warns;
+
+      // Dynamic Today's Minervini Market Briefing
+      const briefEl = document.getElementById("dash-minervini-brief");
+      if (briefEl) {
+        const rg = currentRegimeData || {};
+        const regName = rg.regime || "CAUTION";
+        const spyObj = rg.spy || {}, qqqObj = rg.qqq || {};
+        const b200 = rg.breadth_above_200d_pct !== undefined ? `${rg.breadth_above_200d_pct}%` : "-";
+        const rs80Cnt = eligible.filter(s => s.system_rs_rank >= 80).length;
+        const vcpCnt = eligible.filter(s => s.pattern_status === "VCP_VALIDATED" || s.pattern_status === "VCP_REVIEW_REQUIRED").length;
+        const spyTxt = spyObj.close ? `SPY $${spyObj.close}(${spyObj.above_200 ? "200일선 위" : "200일선 아래"})` : "SPY";
+        const qqqTxt = qqqObj.close ? `QQQ $${qqqObj.close}(${qqqObj.above_200 ? "200일선 위" : "200일선 아래"})` : "QQQ";
+        let actionMsg = "";
+        if (regName === "RISK_OFF") {
+          actionMsg = `지수가 200일선 아래이고 시장 폭(${b200})이 위축되어 있어 <strong>미너비니 기준상 현금 비중을 최대로 지키며 신규 매수를 쉬는 구간</strong>입니다. 억지로 돌파 매수를 하지 말고, 하락장에서도 살아남은 <strong>상승추세 합격 ${ttPass.length}개(VCP 후보 ${vcpCnt}개 · RS 80+ ${rs80Cnt}개)</strong>만 관심목록에 모아두고 지수의 상승 전환 신호를 기다리세요.`;
+        } else if (regName === "DEFENSIVE") {
+          actionMsg = `지수 체력이 약해 돌파가 자주 실패하는 방어 구간입니다. <strong>현금 70~80% 이상을 유지</strong>하면서, 최상위 주도주(RS 85+) 중 거래량이 마른 VCP 종목만 소수 관찰하세요.`;
+        } else if (regName === "RISK_ON") {
+          actionMsg = `지수와 시장 폭(${b200})이 모두 건강한 강세장입니다. <strong>상승추세 합격 ${ttPass.length}개 중 VCP 수축 + 거래량 1.40배↑ 돌파 종목</strong>을 중심으로 적극 진입하되, 피벗 +5% 이상 추격 매수는 피하세요.`;
+        } else {
+          actionMsg = `시장 방향이 엇갈리는 혼조세(시장 폭 ${b200})입니다. <strong>평소의 1/3~1/2 소액으로만 시범 매수</strong>하고, 먼저 산 종목이 수익이 날 때만 비중을 늘리는 피드백 루프 원칙을 지키세요.`;
+        }
+        briefEl.innerHTML = `<span class="text-slate-600">[${spyTxt} · ${qqqTxt} · 200일선 위 ${b200}]</span> ${actionMsg}`;
+      }
 
       let rows = eligible;
       if (state.listMode === "watchlist") rows = stocks.filter(s => watchlist.has(s.ticker));
@@ -1437,19 +1496,87 @@ python -m unittest discover -s tests -v</pre>
       }).join("");
     }
 
+    function jumpToScreenerSector(sec, mode) {
+      state.screenerMode = "sepa";
+      state.sepaUni = "ELIGIBLE";
+      state.sepaSector = sec || "ALL";
+      if (mode === "tt") {
+        state.sepaTt = "PASS";
+        state.sepaMinRs = 70;
+      } else if (mode === "rs80") {
+        state.sepaTt = "ALL";
+        state.sepaMinRs = 80;
+      } else {
+        state.sepaTt = "ALL";
+        state.sepaMinRs = 70;
+      }
+      const modeSepaBtn = document.getElementById("mode-sepa-btn");
+      const modeLegacyBtn = document.getElementById("mode-legacy-btn");
+      if (modeSepaBtn && modeLegacyBtn) {
+        modeSepaBtn.className = "px-3 py-1.5 rounded-lg text-xs font-semibold bg-slate-900 text-white";
+        modeLegacyBtn.className = "px-3 py-1.5 rounded-lg text-xs font-medium bg-slate-100 text-slate-700";
+        document.getElementById("sepa-controls")?.classList.remove("hidden");
+        document.getElementById("legacy-controls")?.classList.add("hidden");
+      }
+      const rsEl = document.getElementById("sepa-rs");
+      const rsVal = document.getElementById("sepa-rs-val");
+      const ttEl = document.getElementById("sepa-tt");
+      const uniEl = document.getElementById("sepa-uni");
+      const secEl = document.getElementById("sepa-sector");
+      if (rsEl) rsEl.value = state.sepaMinRs;
+      if (rsVal) rsVal.textContent = state.sepaMinRs;
+      if (ttEl) ttEl.value = state.sepaTt;
+      if (uniEl) uniEl.value = state.sepaUni;
+      if (secEl) secEl.value = state.sepaSector;
+      switchTab("screener");
+      const secLabel = state.sepaSector === "ALL" ? "전체 섹터" : fmtSector(state.sepaSector);
+      const modeLabel = mode === "tt" ? "상승추세 합격 종목" : mode === "rs80" ? "RS 80+ 주도주" : "종목";
+      showToast(`${secLabel} · ${modeLabel} 화면으로 이동했습니다`);
+    }
+
     function renderMarketTab() {
       if (currentRegimeData) {
         const rg = currentRegimeData;
-        const fmtIdx = (obj) => (!obj || obj.status !== "OK") ? "데이터 부족" : `종가 $${obj.close} · ${obj.above_50 ? "50일선 위" : "50일선 아래"} · ${obj.above_200 ? "200일선 위" : "200일선 아래"}`;
+        const fmtIdx = (obj) => {
+          if (!obj || obj.status !== "OK") return "데이터 부족";
+          const pos50 = obj.above_50 ? "50일선 위(단기 양호)" : "50일선 아래(단기 약세)";
+          const pos200 = obj.above_200 ? "200일선 위(장기 상승)" : "200일선 아래(장기 하락)";
+          return `$${obj.close} · ${pos50} · ${pos200}`;
+        };
         document.getElementById("mkt-spy-trend").textContent = fmtIdx(rg.spy);
         document.getElementById("mkt-qqq-trend").textContent = fmtIdx(rg.qqq);
-        document.getElementById("mkt-spy-ftd").textContent = rg.spy_ftd_proxy?.ftd_quality_note || rg.SYSTEM_DISTRIBUTION_PROXY || "-";
-        document.getElementById("mkt-qqq-ftd").textContent = rg.qqq_ftd_proxy?.ftd_quality_note || rg.SYSTEM_FTD_PROXY || "-";
-        const qNote = rg.qqq_ftd_proxy?.ftd_quality_note || "";
-        const sNote = rg.spy_ftd_proxy?.ftd_quality_note || "";
+
+        const translateProxy = (p, name) => {
+          if (!p) return `${name} 신호 데이터 대기 중입니다.`;
+          const dist = p.distribution_days_25d ?? 0;
+          const ftdStr = p.ftd_triggered
+            ? `최근 상승 전환(FTD) 유사 신호 감지 (${p.ftd_date || "최근"})`
+            : "아직 확실한 상승 전환일(FTD) 신호가 나오지 않았습니다";
+          const distStr = dist >= 4
+            ? `최근 25일간 기관 매도일(분산일)이 ${dist}회로 많아 매수 주의가 필요합니다.`
+            : `최근 25일간 기관 매도일(분산일)은 ${dist}회입니다.`;
+          return `${ftdStr}. ${distStr}`;
+        };
+        document.getElementById("mkt-spy-ftd").textContent = translateProxy(rg.spy_ftd_proxy, "SPY");
+        document.getElementById("mkt-qqq-ftd").textContent = translateProxy(rg.qqq_ftd_proxy, "QQQ");
+
+        const regName = rg.regime || "CAUTION";
+        const b200 = rg.breadth_above_200d_pct !== undefined ? `${rg.breadth_above_200d_pct}%` : "-";
+        let feelAction = "";
+        if (regName === "RISK_OFF") {
+          feelAction = "<strong>① 지금 느낄 점:</strong> 지수와 종목 다수가 200일선 아래라 매수해도 손절당하기 쉬운 환경입니다.<br><strong>② 오늘 할 일:</strong> 억지 매수를 멈추고 <strong>현금을 지키면서</strong>, 아래 표에서 강한 섹터의 '상승추세 합격 종목'만 눌러 관심목록에 담아두세요. 상승 전환일(FTD) + 개별주 돌파 성공이 확인될 때 다시 진입합니다.";
+        } else if (regName === "DEFENSIVE") {
+          feelAction = "<strong>① 지금 느낄 점:</strong> 시장이 불안정해 돌파 시도가 자주 꺾입니다.<br><strong>② 오늘 할 일:</strong> <strong>현금 70~80% 이상</strong>을 유지하고, 최상위 섹터의 RS 85+ 종목만 좁게 관찰하세요.";
+        } else if (regName === "RISK_ON") {
+          feelAction = "<strong>① 지금 느낄 점:</strong> 지수와 시장 폭(" + b200 + ")이 모두 뒷받침되는 건강한 상승장입니다.<br><strong>② 오늘 할 일:</strong> 아래 표에서 주도주가 몰린 <strong>상위 섹터의 상승추세 합격·VCP 돌파 종목</strong>을 적극 공략하세요.";
+        } else {
+          feelAction = "<strong>① 지금 느낄 점:</strong> 오르는 섹터와 약한 섹터가 엇갈리는 혼조세(시장 폭 " + b200 + ")입니다.<br><strong>② 오늘 할 일:</strong> 주도 섹터 위주로 <strong>평소 절반 이하 소액으로만 시범 매수</strong>하고, 수익이 확인될 때만 비중을 늘리세요.";
+        }
         document.getElementById("mkt-ftd-live-diagnosis").innerHTML =
-          `<strong>현 시장 실시간 대입 (${rg.regime} · ${rg.policy}):</strong><br>• <strong>SPY:</strong> ${sNote}<br>• <strong>QQQ:</strong> ${qNote}<br>• <strong>미너비니식 행동 결론:</strong> ${rg.regime === "RISK_OFF" ? "지수 200일선 하회 + 신호 미확정 구간이므로 FTD가 나와도 개별주 돌파 성공이 확인될 때까지 현금을 지키세요." : rg.regime === "RISK_ON" ? "추세와 시장 폭이 건강하므로 FTD 유지 여부와 함께 주도주 돌파 진입을 검토하세요." : "신호 품질이 혼조세이므로 분산일 증가 여부를 감시하며 소액 선별 접근만 권장합니다."}`;
+          `<div class="font-bold text-indigo-950 mb-1">현재 시장 판독: ${regName} (전체 종목 중 200일선 위 비율 ${b200})</div>` +
+          `<div>${feelAction}</div>`;
       }
+
       const bySec = {};
       stocks.forEach(s => {
         if (!bySec[s.sector]) bySec[s.sector] = { count: 0, rsSum: 0, leaders: 0, tt: 0, em: 0 };
@@ -1459,13 +1586,32 @@ python -m unittest discover -s tests -v</pre>
         if (s.tt_status === "PASS") bySec[s.sector].tt++;
         if (s.system_rs_rank >= 90) bySec[s.sector].em++;
       });
-      document.getElementById("sector-tbody").innerHTML = Object.entries(bySec).map(([sec, v]) => `
+
+      const sortedSecs = Object.entries(bySec).sort((a, b) => (b[1].leaders - a[1].leaders) || (b[1].tt - a[1].tt));
+      const totalLeaders = sortedSecs.reduce((acc, [, v]) => acc + v.leaders, 0);
+      const totalTt = sortedSecs.reduce((acc, [, v]) => acc + v.tt, 0);
+      const briefSecEl = document.getElementById("mkt-sector-brief");
+      if (briefSecEl && sortedSecs.length >= 2) {
+        const [s1, v1] = sortedSecs[0];
+        const [s2, v2] = sortedSecs[1];
+        const top2Pct = totalLeaders > 0 ? Math.round(((v1.leaders + v2.leaders) / totalLeaders) * 100) : 0;
+        briefSecEl.innerHTML =
+          `<strong class="text-slate-900">미너비니식 섹터 해석 브리핑:</strong> 미너비니는 시장이 상승할 때 <strong>특정 1~2개 선도 섹터에 강한 종목(RS 80+ · 상승추세 합격)이 집중되는 현상</strong>을 가장 중요하게 봅니다. ` +
+          `현재 전체 RS 80+ 주도주(${totalLeaders}개) 중 <strong>${fmtSector(s1)}(${v1.leaders}개)</strong>과 <strong>${fmtSector(s2)}(${v2.leaders}개)</strong> 두 섹터가 전체의 <strong>${top2Pct}%</strong>를 차지하고 있으며, ` +
+          `상승추세 합격 종목도 총 <strong>${totalTt}개</strong>가 포착되었습니다. 종목을 고를 때는 위 상위 섹터 숫자를 눌러 그 안에서 VCP가 나오는 종목부터 우선 살펴보세요.`;
+      }
+
+      document.getElementById("sector-tbody").innerHTML = sortedSecs.map(([sec, v]) => `
         <tr class="hover:bg-slate-50">
           <td class="py-3 px-4 font-semibold text-slate-900">${fmtSector(sec)}</td>
           <td class="py-3 px-4 text-right tabular-nums">${v.count}</td>
           <td class="py-3 px-4 text-right tabular-nums font-bold">${Math.round(v.rsSum / v.count)}</td>
-          <td class="py-3 px-4 text-right tabular-nums text-blue-600 font-semibold">${v.leaders}</td>
-          <td class="py-3 px-4 text-right tabular-nums text-emerald-600 font-semibold">${v.tt}</td>
+          <td class="py-3 px-4 text-right tabular-nums">
+            <button type="button" onclick="jumpToScreenerSector('${sec.replace(/'/g, "\'")}', 'rs80')" class="inline-flex items-center px-2 py-0.5 rounded-md bg-blue-50 text-blue-700 font-bold hover:bg-blue-100 underline decoration-blue-300 cursor-pointer transition">${v.leaders}</button>
+          </td>
+          <td class="py-3 px-4 text-right tabular-nums">
+            <button type="button" onclick="jumpToScreenerSector('${sec.replace(/'/g, "\'")}', 'tt')" class="inline-flex items-center px-2 py-0.5 rounded-md bg-emerald-50 text-emerald-700 font-bold hover:bg-emerald-100 underline decoration-emerald-300 cursor-pointer transition">${v.tt}</button>
+          </td>
           <td class="py-3 px-4 text-right tabular-nums">${v.em}</td>
         </tr>
       `).join("");
@@ -1489,6 +1635,7 @@ python -m unittest discover -s tests -v</pre>
           if (q && !s.ticker.toLowerCase().includes(q) && !s.name.toLowerCase().includes(q)) return false;
           if (s.system_rs_rank < state.sepaMinRs) return false;
           if (state.sepaTt !== "ALL" && s.tt_status !== state.sepaTt) return false;
+          if (state.sepaSector !== "ALL" && s.sector !== state.sepaSector) return false;
           return true;
         });
       }
@@ -2162,11 +2309,12 @@ python -m unittest discover -s tests -v</pre>
         renderScreenerTab();
       });
     });
-    ["sepa-search", "sepa-rs", "sepa-tt", "sepa-uni", "sepa-hc-toggle"].forEach(id => {
+    ["sepa-search", "sepa-rs", "sepa-tt", "sepa-uni", "sepa-sector", "sepa-hc-toggle"].forEach(id => {
       document.getElementById(id).addEventListener("input", () => {
         state.sepaSearch = document.getElementById("sepa-search").value;
         state.sepaMinRs = Number(document.getElementById("sepa-rs").value); document.getElementById("sepa-rs-val").textContent = state.sepaMinRs;
         state.sepaTt = document.getElementById("sepa-tt").value;
+        state.sepaSector = document.getElementById("sepa-sector")?.value || "ALL";
         state.sepaUni = document.getElementById("sepa-uni").value;
         state.sepaIncludeHc = document.getElementById("sepa-hc-toggle").checked;
         renderScreenerTab();
