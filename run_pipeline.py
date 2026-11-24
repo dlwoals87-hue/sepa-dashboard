@@ -475,6 +475,47 @@ def run_sepa_pipeline(finviz_filters: Dict[str, str] = None, max_universe: int =
     parent_json = os.path.join("..", out_json)
     if os.path.exists(os.path.join("..", "investment_dashboard_v2.html")):
         export_json(payload, parent_json)
+    # Export static 10Y history & financials JSONs for GitHub Pages (works without .bat!)
+    os.makedirs("data/history", exist_ok=True)
+    os.makedirs("data/financials", exist_ok=True)
+    gh_targets = list(dict.fromkeys([x["ticker"] for x in analyzed_stocks if x.get("tt_status") == "PASS" or x.get("in_ndx100")]))[:250]
+    if gh_targets:
+        print(f"      GitHub Pages용 정적 10년 차트/실적 파일 생성 중 ({len(gh_targets)}개 주요 종목)...")
+        spy_10y = yf.Ticker("SPY").history(period="10y", interval="1d", auto_adjust=True)
+        spy_map_10y = {d.strftime("%Y-%m-%d"): round(float(v), 2) for d, v in zip(spy_10y.index, spy_10y["Close"])} if (spy_10y is not None and not spy_10y.empty) else {}
+        for i in range(0, len(gh_targets), 50):
+            chunk = gh_targets[i : i + 50]
+            try:
+                h10_map = fetch_yfinance_ohlcv_batch(chunk, period="10y")
+                for sym in chunk:
+                    hdf = h10_map.get(sym)
+                    if hdf is None or hdf.empty:
+                        continue
+                    dts = [d.strftime("%Y-%m-%d") for d in hdf.index]
+                    candles = [
+                        {
+                            "time": dt,
+                            "open": round(float(r["Open"]), 2),
+                            "high": round(float(r["High"]), 2),
+                            "low": round(float(r["Low"]), 2),
+                            "close": round(float(r["Close"]), 2),
+                            "volume": int(r["Volume"]) if r["Volume"] == r["Volume"] else 0,
+                        }
+                        for dt, (_, r) in zip(dts, hdf.iterrows())
+                    ]
+                    sp_list = [spy_map_10y.get(dt) for dt in dts]
+                    with open(f"data/history/{sym}.json", "w", encoding="utf-8") as hf:
+                        json.dump({"ticker": sym, "dates": dts, "prices": [c["close"] for c in candles], "candles": candles, "spy_prices": sp_list}, hf, separators=(",", ":"))
+            except Exception:
+                pass
+        # Also save financials JSON from fund_cache where available
+        for sym in gh_targets:
+            if sym in fund_cache:
+                _, qe, qs, _, _ = fund_cache[sym]
+                if qe or qs:
+                    with open(f"data/financials/{sym}.json", "w", encoding="utf-8") as ff:
+                        json.dump({"ticker": sym, "quarterly_eps": qe, "quarterly_sales": qs}, ff, separators=(",", ":"))
+
     export_csv(analyzed_stocks, "sepa_candidates.csv")
     export_excel(payload, "sepa_report_v2.xlsx")
     return payload

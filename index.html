@@ -1739,12 +1739,25 @@ python -m unittest discover -s tests -v</pre>
       // Auto-fetch real OHLCV candles (Open/High/Low/Close/Volume + SPY) for current period including 1y & 2y
       if ((!s.longCache || !s.longCache[state.setupPeriod]) && (window.location.protocol.startsWith("http"))) {
         const reqTicker = s.ticker, reqPeriod = state.setupPeriod;
+        const sliceByPeriod = (d, p) => {
+          if (!d || !Array.isArray(d.candles)) return d;
+          const cut = p === "1y" ? 252 : p === "2y" ? 504 : p === "5y" ? 1260 : d.candles.length;
+          if (d.candles.length <= cut) return d;
+          return {
+            ...d,
+            dates: d.dates ? d.dates.slice(-cut) : d.candles.slice(-cut).map(c => c.time),
+            prices: d.prices ? d.prices.slice(-cut) : d.candles.slice(-cut).map(c => c.close),
+            candles: d.candles.slice(-cut),
+            spy_prices: d.spy_prices ? d.spy_prices.slice(-cut) : []
+          };
+        };
         fetch(`api/history?ticker=${encodeURIComponent(reqTicker)}&period=${reqPeriod}`)
-          .then(r => r.ok ? r.json() : null)
+          .then(r => r.ok ? r.json() : fetch(`data/history/${encodeURIComponent(reqTicker)}.json`).then(r2 => r2.ok ? r2.json() : null))
+          .catch(() => fetch(`data/history/${encodeURIComponent(reqTicker)}.json`).then(r2 => r2.ok ? r2.json() : null))
           .then(d => {
             if (d && Array.isArray(d.candles) && d.candles.length) {
               s.longCache = s.longCache || {};
-              s.longCache[reqPeriod] = d;
+              s.longCache[reqPeriod] = sliceByPeriod(d, reqPeriod);
               if (state.selectedTicker === reqTicker && state.setupPeriod === reqPeriod && state.activeTab === "setups") {
                 renderSetupsTab();
               }

@@ -42,6 +42,6 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add sepa_dashboard_data.json sepa_candidates.csv sepa_report_v2.xlsx
+          git add sepa_dashboard_data.json sepa_candidates.csv sepa_report_v2.xlsx data/
           git diff --staged --quiet || git commit -m "chore: update SEPA market data ($(date -u +%Y-%m-%d))"
           git push
