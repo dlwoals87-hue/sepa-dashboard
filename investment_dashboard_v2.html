@@ -1547,8 +1547,8 @@ python -m unittest discover -s tests -v</pre>
     function renderFinancialPanel(s) {
       const hasReal = s.finData && s.finData[state.finMode] && s.finData[state.finMode].labels.length > 0;
       document.getElementById("fin-source-note").textContent = hasReal
-        ? `Yahoo Finance 실제 재무제표 (${state.finMode === "annual" ? "연간 + TTM" : "분기별 Q1~Q4"})`
-        : `샘플 예시 데이터 (start_dashboard.bat 실행 시 실제 분기/연간 재무제표 자동 로드)`;
+        ? `${(s.finData && s.finData.source) || "SEC EDGAR / Yahoo Finance"} 실제 재무제표 (${state.finMode === "annual" ? "연간 + TTM" : "분기별 Q1~Q4"})`
+        : `샘플 예시 표시 중 (상승추세 합격·Nasdaq 100 실제 재무제표는 Actions 업데이트 후 자동 로드)`;
 
       const demoAnnual = {
         labels: ["2022", "2023", "2024", "2025", "TTM"],
@@ -1964,9 +1964,17 @@ python -m unittest discover -s tests -v</pre>
       }
 
       if (!s.finData && (window.location.protocol.startsWith("http"))) {
-        fetch(`api/financials?ticker=${encodeURIComponent(s.ticker)}`)
-          .then(r => r.ok ? r.json() : null)
-          .then(fd => { if (fd && fd.annual) { s.finData = fd; if (fd.sector) s.sector = fd.sector; renderFinancialPanel(s); } })
+        const reqFinTicker = s.ticker;
+        fetch(`api/financials?ticker=${encodeURIComponent(reqFinTicker)}`)
+          .then(r => r.ok ? r.json() : Promise.reject())
+          .catch(() => fetch(`data/financials/${encodeURIComponent(reqFinTicker)}.json`).then(r => r.ok ? r.json() : null))
+          .then(fd => {
+            if (fd && (fd.annual || fd.quarterly)) {
+              s.finData = fd;
+              if (fd.sector) s.sector = fd.sector;
+              if (state.selectedTicker === reqFinTicker && state.activeTab === "setups") renderFinancialPanel(s);
+            }
+          })
           .catch(() => {});
       }
       renderFinancialPanel(s);
@@ -2201,7 +2209,7 @@ python -m unittest discover -s tests -v</pre>
         const s = stocks.find(x => x.ticker === state.selectedTicker) || stocks[0];
         if (!s) return;
         if (window.location.hostname !== "127.0.0.1" && window.location.hostname !== "localhost" && period !== "1y") {
-          showToast("2년/5년/10년/MAX 실제 OHLCV 차트는 start_dashboard.bat 실행 시 조회됩니다");
+          showToast("해당 종목은 1년 기본 차트만 제공됩니다 (상승추세 합격·Nasdaq 100은 10년 일봉 제공)");
         }
         renderSetupsTab();
       });

@@ -290,12 +290,16 @@ def run_sepa_pipeline(finviz_filters: Dict[str, str] = None, max_universe: int =
 
     # Enrich ALL TT PASS candidates concurrently (8 threads -> ~10-15s for ~200 stocks)
     from concurrent.futures import ThreadPoolExecutor, as_completed
-    tt_pass_items = sorted([x for x in analyzed_stocks if x.get("tt_status") == "PASS"], key=lambda x: x.get("system_rs_rank", 0), reverse=True)
+    tt_pass_items = sorted(
+        [x for x in analyzed_stocks if x.get("tt_status") == "PASS" or x.get("in_ndx100")],
+        key=lambda x: (x.get("tt_status") == "PASS", x.get("system_rs_rank", 0)),
+        reverse=True,
+    )
     tt_pass_map = {x["ticker"]: x for x in tt_pass_items}
 
-    def _fetch_sec_quarterly_eps_rev(cik_str):
+    def _fetch_sec_financials(cik_str):
         if not cik_str:
-            return [], []
+            return [], [], None
         url = f"https://data.sec.gov/api/xbrl/companyfacts/CIK{cik_str}.json"
         req = urllib.request.Request(
             url,
@@ -308,7 +312,7 @@ def run_sepa_pipeline(finviz_filters: Dict[str, str] = None, max_universe: int =
                 raw = gzip.decompress(raw)
             facts = json.loads(raw.decode("utf-8")).get("facts", {}).get("us-gaap", {})
 
-        def _extract_q_series(tag_names):
+        def _extract_q_map(tag_names):
             for tag in tag_names:
                 units = facts.get(tag, {}).get("units", {})
                 arr = units.get("USD/shares") or units.get("USD") or []
@@ -318,37 +322,128 @@ def run_sepa_pipeline(finviz_filters: Dict[str, str] = None, max_universe: int =
                         continue
                     frame = row.get("frame", "")
                     if frame.startswith("CY") and "Q" in frame and len(frame) <= 9:
-                        q_map[frame] = float(row["val"])
+                        # CY2025Q1 -> sort key & pretty label "Q1 '25"
+                        yr = frame[2:6]
+                        qt = frame[6:]
+                        q_map[f"{yr}-{qt}"] = (f"{qt} '{yr[2:]}", float(row["val"]))
                     elif row.get("fp") in ("Q1", "Q2", "Q3", "Q4") and row.get("start") and row.get("end"):
                         try:
                             d0 = datetime.strptime(row["start"], "%Y-%m-%d")
                             d1 = datetime.strptime(row["end"], "%Y-%m-%d")
                             if 70 <= (d1 - d0).days <= 110:
-                                key = row["end"][:7]
-                                q_map[key] = float(row["val"])
+                                yr = row["end"][:4]
+                                m = int(row["end"][5:7])
+                                q_num = (m - 1) // 3 + 1
+                                q_map[f"{yr}-Q{q_num}"] = (f"Q{q_num} '{yr[2:]}", float(row["val"]))
                         except Exception:
                             pass
-                if len(q_map) >= 5:
-                    keys = sorted(q_map.keys())[-8:]
-                    return [q_map[k] for k in keys]
-            return []
+                if len(q_map) >= 4:
+                    return q_map
+            return {}
 
-        q_eps = _extract_q_series(["EarningsPerShareDiluted", "EarningsPerShareBasic"])
-        q_rev = _extract_q_series([
+        def _extract_a_map(tag_names):
+            for tag in tag_names:
+                units = facts.get(tag, {}).get("units", {})
+                arr = units.get("USD/shares") or units.get("USD") or []
+                a_map = {}
+                for row in arr:
+                    if row.get("form") != "10-K":
+                        continue
+                    frame = row.get("frame", "")
+                    if frame.startswith("CY") and len(frame) == 6 and frame[2:].isdigit():
+                        a_map[frame[2:]] = float(row["val"])
+                    elif row.get("start") and row.get("end"):
+                        try:
+                            d0 = datetime.strptime(row["start"], "%Y-%m-%d")
+                            d1 = datetime.strptime(row["end"], "%Y-%m-%d")
+                            if 330 <= (d1 - d0).days <= 390:
+                                a_map[row["end"][:4]] = float(row["val"])
+                        except Exception:
+                            pass
+                if len(a_map) >= 2:
+                    return a_map
+            return {}
+
+        q_eps_map = _extract_q_map(["EarningsPerShareDiluted", "EarningsPerShareBasic"])
+        q_rev_map = _extract_q_map([
             "RevenueFromContractWithCustomerExcludingAssessedTax",
             "RevenueFromContractWithCustomerIncludingAssessedTax",
             "Revenues",
             "SalesRevenueNet",
         ])
-        return q_eps, q_rev
+        q_net_map = _extract_q_map(["NetIncomeLoss", "ProfitLoss"])
+
+        q_keys = sorted(set(q_eps_map.keys()) | set(q_rev_map.keys()))[-8:]
+        q_eps = [q_eps_map[k][1] for k in q_keys if k in q_eps_map]
+        q_rev = [q_rev_map[k][1] for k in q_keys if k in q_rev_map]
+
+        q_labels = [
+            (q_eps_map.get(k) or q_rev_map.get(k) or (k, 0))[0]
+            for k in q_keys
+        ]
+        q_rev_b = [round(q_rev_map[k][1] / 1e9, 2) if k in q_rev_map else None for k in q_keys]
+        q_net_b = [round(q_net_map[k][1] / 1e9, 2) if k in q_net_map else None for k in q_keys]
+        q_eps_vals = [round(q_eps_map[k][1], 2) if k in q_eps_map else None for k in q_keys]
+        q_eps_yoy = []
+        for idx_q, k in enumerate(q_keys):
+            yr_i, qt_i = k.split("-")
+            prev_k = f"{int(yr_i) - 1}-{qt_i}"
+            cur_v = q_eps_vals[idx_q]
+            prev_v = round(q_eps_map[prev_k][1], 2) if prev_k in q_eps_map else None
+            if cur_v is not None and prev_v is not None and abs(prev_v) > 1e-6:
+                q_eps_yoy.append(round(((cur_v - prev_v) / abs(prev_v)) * 100.0, 1))
+            else:
+                q_eps_yoy.append(None)
+
+        a_eps_map = _extract_a_map(["EarningsPerShareDiluted", "EarningsPerShareBasic"])
+        a_rev_map = _extract_a_map([
+            "RevenueFromContractWithCustomerExcludingAssessedTax",
+            "RevenueFromContractWithCustomerIncludingAssessedTax",
+            "Revenues",
+            "SalesRevenueNet",
+        ])
+        a_net_map = _extract_a_map(["NetIncomeLoss", "ProfitLoss"])
+        a_keys = sorted(set(a_eps_map.keys()) | set(a_rev_map.keys()))[-4:]
+        a_labels = list(a_keys)
+        a_rev_b = [round(a_rev_map[k] / 1e9, 2) if k in a_rev_map else None for k in a_keys]
+        a_net_b = [round(a_net_map[k] / 1e9, 2) if k in a_net_map else None for k in a_keys]
+        a_eps_vals = [round(a_eps_map[k], 2) if k in a_eps_map else None for k in a_keys]
+        # Append TTM if we have at least 4 quarters
+        if len(q_keys) >= 4:
+            last4 = q_keys[-4:]
+            ttm_rev = sum(q_rev_map[k][1] for k in last4 if k in q_rev_map) if all(k in q_rev_map for k in last4) else None
+            ttm_net = sum(q_net_map[k][1] for k in last4 if k in q_net_map) if all(k in q_net_map for k in last4) else None
+            ttm_eps = sum(q_eps_map[k][1] for k in last4 if k in q_eps_map) if all(k in q_eps_map for k in last4) else None
+            if ttm_rev is not None or ttm_eps is not None:
+                a_labels.append("TTM")
+                a_rev_b.append(round(ttm_rev / 1e9, 2) if ttm_rev is not None else None)
+                a_net_b.append(round(ttm_net / 1e9, 2) if ttm_net is not None else None)
+                a_eps_vals.append(round(ttm_eps, 2) if ttm_eps is not None else None)
+
+        a_eps_yoy = []
+        for idx_a in range(len(a_labels)):
+            if idx_a > 0 and a_eps_vals[idx_a] is not None and a_eps_vals[idx_a - 1] is not None and abs(a_eps_vals[idx_a - 1]) > 1e-6:
+                a_eps_yoy.append(round(((a_eps_vals[idx_a] - a_eps_vals[idx_a - 1]) / abs(a_eps_vals[idx_a - 1])) * 100.0, 1))
+            else:
+                a_eps_yoy.append(None)
+
+        fin_payload = {
+            "ticker": "",
+            "source": "SEC EDGAR XBRL",
+            "annual": {"labels": a_labels, "revenueB": a_rev_b, "netIncomeB": a_net_b, "eps": a_eps_vals, "epsYoY": a_eps_yoy},
+            "quarterly": {"labels": q_labels, "revenueB": q_rev_b, "netIncomeB": q_net_b, "eps": q_eps_vals, "epsYoY": q_eps_yoy},
+        }
+        return q_eps, q_rev, fin_payload
 
     def _fetch_one_fund(ticker_sym):
         time.sleep(0.15)
         cik_str = tt_pass_map[ticker_sym].get("cik")
         try:
-            q_eps, q_rev = _fetch_sec_quarterly_eps_rev(cik_str)
-            if len(q_eps) >= 5 or len(q_rev) >= 5:
-                return ticker_sym, {}, q_eps, q_rev, None, None
+            q_eps, q_rev, fin_payload = _fetch_sec_financials(cik_str)
+            if len(q_eps) >= 4 or len(q_rev) >= 4:
+                if fin_payload:
+                    fin_payload["ticker"] = ticker_sym
+                return ticker_sym, {}, q_eps, q_rev, None, fin_payload
         except Exception:
             pass
         # Fallback to yfinance only if SEC XBRL lacked tags (with gentle handling)
@@ -478,7 +573,7 @@ def run_sepa_pipeline(finviz_filters: Dict[str, str] = None, max_universe: int =
     # Export static 10Y history & financials JSONs for GitHub Pages (works without .bat!)
     os.makedirs("data/history", exist_ok=True)
     os.makedirs("data/financials", exist_ok=True)
-    gh_targets = list(dict.fromkeys([x["ticker"] for x in analyzed_stocks if x.get("tt_status") == "PASS" or x.get("in_ndx100")]))[:250]
+    gh_targets = list(dict.fromkeys([x["ticker"] for x in analyzed_stocks if x.get("tt_status") == "PASS" or x.get("in_ndx100")]))
     if gh_targets:
         print(f"      GitHub Pages용 정적 10년 차트/실적 파일 생성 중 ({len(gh_targets)}개 주요 종목)...")
         spy_10y = yf.Ticker("SPY").history(period="10y", interval="1d", auto_adjust=True)
@@ -508,13 +603,13 @@ def run_sepa_pipeline(finviz_filters: Dict[str, str] = None, max_universe: int =
                         json.dump({"ticker": sym, "dates": dts, "prices": [c["close"] for c in candles], "candles": candles, "spy_prices": sp_list}, hf, separators=(",", ":"))
             except Exception:
                 pass
-        # Also save financials JSON from fund_cache where available
+        # Also save financials JSON from fund_cache where available (annual + quarterly for dashboard)
         for sym in gh_targets:
             if sym in fund_cache:
-                _, qe, qs, _, _ = fund_cache[sym]
-                if qe or qs:
+                _, qe, qs, _, fin_payload = fund_cache[sym]
+                if fin_payload and (fin_payload.get("quarterly", {}).get("labels") or fin_payload.get("annual", {}).get("labels")):
                     with open(f"data/financials/{sym}.json", "w", encoding="utf-8") as ff:
-                        json.dump({"ticker": sym, "quarterly_eps": qe, "quarterly_sales": qs}, ff, separators=(",", ":"))
+                        json.dump(fin_payload, ff, separators=(",", ":"))
 
     export_csv(analyzed_stocks, "sepa_candidates.csv")
     export_excel(payload, "sepa_report_v2.xlsx")
