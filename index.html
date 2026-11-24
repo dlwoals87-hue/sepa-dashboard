@@ -1647,24 +1647,49 @@ python -m unittest discover -s tests -v</pre>
         ? `T1($${calcC[0].low}~$${calcC[0].high}, -${calcC[0].depth_pct}%) → T2($${calcC[1].low}~$${calcC[1].high}, -${calcC[1].depth_pct}%) → T3($${calcC[2].low}~$${calcC[2].high}, -${calcC[2].depth_pct}%)`
         : "60일 구간 데이터 부족";
 
+      const pivPrice = Number(s.pivot || s.price || 0);
+      const lastBar = rawDailyCandles[rawDailyCandles.length - 1] || { close: s.price, high: s.price, volume: 0 };
+      const c5Pass = pivPrice > 0 && calcC.length === 3;
+      const curVolRatio = avgV50 > 0 ? +(lastBar.volume / avgV50).toFixed(2) : Number(s.vol_ratio || 0);
+      const c6Pass = (lastBar.close > pivPrice) && curVolRatio >= 1.40;
+
+      const badgeHtml = (ok, okTxt = "요건 충족", failTxt = "요건 미달") =>
+        `<span class="ml-1 px-1.5 py-0.5 rounded text-[10px] font-bold ${ok ? "bg-emerald-100 text-emerald-800" : "bg-rose-100 text-rose-800"}">→ ${ok ? okTxt : failTxt}</span>`;
+
       document.getElementById("setup-kr-comment").innerHTML = `
-        <span>현재 매수 판정은 <strong>'${entKrS[s.entry_status] || s.entry_status}'</strong>, 차트 모양은 <strong>'${patKrS[s.pattern_status] || s.pattern_status}'</strong>입니다.</span>
-        <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 mt-2.5 text-[11px]">
-          <div class="bg-white p-2 rounded-lg border border-slate-200">
-            <span class="font-bold ${c1Pass ? "text-emerald-700" : "text-rose-700"}">${c1Pass ? "✓" : "✕"} ① 선행 상승추세 (+25%↑):</span>
-            ${priorUp !== null && priorUp !== undefined ? `+${priorUp}%` : "120일 이상 데이터 필요"}
+        <div class="flex flex-wrap items-center justify-between gap-2">
+          <span>현재 매수 판정은 <strong>'${entKrS[s.entry_status] || s.entry_status}'</strong>, 차트 모양은 <strong>'${patKrS[s.pattern_status] || s.pattern_status}'</strong>입니다. <span class="text-slate-500">(초록색 '요건 충족'이 많을수록 완벽한 VCP 셋업입니다)</span></span>
+        </div>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-2.5 mt-3 text-[11px] leading-relaxed">
+          <div class="bg-white p-2.5 rounded-xl border ${c1Pass ? "border-emerald-200" : "border-slate-200"}">
+            <div><strong class="text-slate-900">1. 선행 상승추세 (기본 +25% 이상 상승):</strong> <span class="font-bold">${priorUp !== null && priorUp !== undefined ? `+${priorUp}%` : "데이터 부족"}</span> ${badgeHtml(c1Pass)}</div>
+            <div class="text-[10px] text-slate-600 mt-1">* <strong>왜 25% 이상인가?</strong> 미너비니는 바닥에서 기어다니는 소외주가 아니라, 이미 기관 자금이 들어와 상승 탄력이 증명된 주도주만 매수하기 때문입니다.</div>
           </div>
-          <div class="bg-white p-2 rounded-lg border border-slate-200">
-            <span class="font-bold ${c2Pass ? "text-emerald-700" : "text-rose-700"}">${c2Pass ? "✓" : "✕"} ② 60일 3단계 수축 (T1&gt;T2≥T3):</span>
-            <div class="text-[10px] text-slate-600 mt-0.5 tabular-nums">${tSeqHtml}</div>
+
+          <div class="bg-white p-2.5 rounded-xl border ${c2Pass ? "border-emerald-200" : "border-slate-200"}">
+            <div><strong class="text-slate-900">2. 60일 3단계 수축 (T1 &gt; T2 ≥ T3):</strong> ${badgeHtml(c2Pass)}</div>
+            <div class="text-[10px] text-slate-700 font-medium mt-0.5 tabular-nums">${tSeqHtml}</div>
+            <div class="text-[10px] text-slate-600 mt-1">* <strong>왜 폭이 갈수록 줄어야 하나?</strong> 조정이 반복될수록 급히 팔고 나가는 약한 손(단타 물량)이 털려나가면서 주가 흔들림이 자연스럽게 작아지기 때문입니다.</div>
           </div>
-          <div class="bg-white p-2 rounded-lg border border-slate-200">
-            <span class="font-bold ${c3Pass ? "text-emerald-700" : "text-rose-700"}">${c3Pass ? "✓" : "✕"} ③ 마지막 수축 폭 (12% 이내):</span>
-            ${calcC.length === 3 ? `T3 변동폭 -${calcC[2].depth_pct}%` : "-"}
+
+          <div class="bg-white p-2.5 rounded-xl border ${c3Pass ? "border-emerald-200" : "border-slate-200"}">
+            <div><strong class="text-slate-900">3. 마지막 수축 폭 (기본 12% 이내):</strong> <span class="font-bold">${calcC.length === 3 ? `T3 변동폭 -${calcC[2].depth_pct}%` : "-"}</span> ${badgeHtml(c3Pass)}</div>
+            <div class="text-[10px] text-slate-600 mt-1">* <strong>왜 12% 이내로 좁아야 하나?</strong> 마지막 구간 변동이 좁아야 손절선(최대 7%)을 타이트하게 잡을 수 있고, 작은 매수세에도 주가가 가볍게 튀어 오릅니다.</div>
           </div>
-          <div class="bg-white p-2 rounded-lg border border-slate-200">
-            <span class="font-bold ${c4Pass ? "text-emerald-700" : "text-rose-700"}">${c4Pass ? "✓" : "✕"} ④ 거래량 건조 (50일 평균 0.75배↓):</span>
-            ${t3VolRatio !== null ? `T3 구간 평균 ${t3VolRatio}배` : (c4Pass ? "충족" : "기준 미달")}
+
+          <div class="bg-white p-2.5 rounded-xl border ${c4Pass ? "border-emerald-200" : "border-slate-200"}">
+            <div><strong class="text-slate-900">4. 수축 구간 거래량 건조 (50일 평균 0.75배↓):</strong> <span class="font-bold">${t3VolRatio !== null ? `T3 평균 ${t3VolRatio}배` : "-"}</span> ${badgeHtml(c4Pass)}</div>
+            <div class="text-[10px] text-slate-600 mt-1">* <strong>왜 거래량이 말라야 하나?</strong> 주가가 좁게 움직이는데 거래량까지 바짝 말랐다면, 시장에 더 이상 팔 사람이 없는 '매물 진공 상태'라는 증거입니다.</div>
+          </div>
+
+          <div class="bg-white p-2.5 rounded-xl border ${c5Pass ? "border-emerald-200" : "border-slate-200"}">
+            <div><strong class="text-slate-900">5. 사전 형성된 피벗 저항선 (60일 최고가):</strong> <span class="font-bold">$${pivPrice.toFixed(2)} (현재가 ${s.pivot_distance_pct > 0 ? "+" : ""}${s.pivot_distance_pct}%)</span> ${badgeHtml(c5Pass)}</div>
+            <div class="text-[10px] text-slate-600 mt-1">* <strong>왜 피벗 저항선이 필요한가?</strong> 매물이 대기하던 명확한 천장(저항선)이 있어야, 그 가격을 뚫는 순간을 정확한 매수 방아쇠(Trigger)로 삼을 수 있습니다.</div>
+          </div>
+
+          <div class="bg-white p-2.5 rounded-xl border ${c6Pass ? "border-emerald-200" : "border-slate-200"}">
+            <div><strong class="text-slate-900">6. 피벗 돌파 + 거래량 급증 (종가 돌파 &amp; 1.40배↑):</strong> <span class="font-bold">${curVolRatio}배</span> ${badgeHtml(c6Pass, "돌파 충족", "돌파 대기/미달")}</div>
+            <div class="text-[10px] text-slate-600 mt-1">* <strong>왜 돌파 시 거래량이 터져야 하나?</strong> 거래량 없는 상승은 개인들의 속임수 반등일 수 있습니다. 1.40배 이상의 거래량이 실려야 기관의 진짜 매집 돌파로 인정합니다.</div>
           </div>
         </div>
       `;
