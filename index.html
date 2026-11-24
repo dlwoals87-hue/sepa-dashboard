@@ -1558,11 +1558,67 @@ python -m unittest discover -s tests -v</pre>
       if (!s) return;
 
       document.getElementById("setup-title").textContent = `${s.ticker} (${s.name}) — 캔들스틱 차트 (피벗 $${s.pivot} · 손절선 $${(s.pivot * 0.93).toFixed(2)})`;
-      document.getElementById("setup-kr-comment").textContent = s.entry_status === "NEAR PIVOT"
-        ? "장기 상승추세 조건은 충족하지만 피벗 돌파가 아직 확인되지 않았습니다. 거래량 감소와 마지막 수축 구간을 추가 관찰하는 상태입니다."
-        : s.entry_status === "EOD CONFIRMED"
-        ? "피벗 종가 돌파와 거래량 1.40x 이상이 확인된 돌파 확인 상태입니다. 다음 거래일 시가(+5% 이내)에서 실행 가능 여부를 검증하세요."
-        : `현재 상태는 ${s.entry_status}입니다. (${s.pattern_status})`;
+      const patKrS = {
+        "VCP_VALIDATED": "수축완성 (VCP)", "VCP_REVIEW_REQUIRED": "수축검토필요",
+        "VCP_CANDIDATE": "수축후보", "NO_SUPPORTED_PATTERN": "패턴없음", "INSUFFICIENT_DATA": "데이터부족"
+      };
+      const entKrS = {
+        "BLOCKED BY MARKET": "시장약세로 매수금지", "EOD CONFIRMED": "돌파확인 (내일 시가검토)",
+        "ACTIONABLE": "매수가능 구간", "NEAR PIVOT": "돌파임박 (관찰)",
+        "SETUP FORMING": "차트 다지는 중", "EXTENDED / NO CHASE": "급등이격 (추격금지)",
+        "FAILED BREAKOUT": "돌파실패", "WATCH": "지켜보기", "DATA UNAVAILABLE": "데이터없음"
+      };
+      const cList = (useLong && Array.isArray(useLong.candles) && useLong.candles.length >= 60)
+        ? useLong.candles
+        : buildDemoCandles(s.prices, s.dates);
+      const b60 = cList.slice(-60);
+      const wSlices = b60.length >= 60 ? [b60.slice(0, 20), b60.slice(20, 40), b60.slice(40, 60)] : [];
+      const calcC = wSlices.length === 3 ? wSlices.map((w, idx) => {
+        const hi = Math.max(...w.map(x => x.high)), lo = Math.min(...w.map(x => x.low));
+        const d = hi > 0 ? +(((hi - lo) / hi) * 100).toFixed(1) : 0;
+        const av = w.reduce((a, b) => a + (b.volume || 0), 0) / w.length;
+        return { stage: `T${idx + 1}`, high: hi.toFixed(2), low: lo.toFixed(2), depth_pct: d, avg_vol: av };
+      }) : (s.contractions || []);
+
+      const avgV50 = cList.length >= 50 ? cList.slice(-50).reduce((a, b) => a + (b.volume || 0), 0) / 50 : 0;
+      const t3VolRatio = (calcC.length === 3 && avgV50 > 0) ? +(calcC[2].avg_vol / avgV50).toFixed(2) : null;
+
+      let priorUp = s.prior_uptrend_pct;
+      if ((priorUp === null || priorUp === undefined) && cList.length >= 120) {
+        const baseHi = Math.max(...cList.slice(-90).map(x => x.high));
+        const priorLo = Math.min(...cList.slice(-210, -90).map(x => x.low));
+        priorUp = priorLo > 0 ? +(((baseHi - priorLo) / priorLo) * 100).toFixed(1) : null;
+      }
+      const c1Pass = priorUp !== null && priorUp >= 25;
+      const c2Pass = calcC.length === 3 && calcC[0].depth_pct > calcC[1].depth_pct && calcC[1].depth_pct >= calcC[2].depth_pct;
+      const c3Pass = calcC.length === 3 && calcC[2].depth_pct <= 12;
+      const c4Pass = s.vol_dryup !== null ? s.vol_dryup : (t3VolRatio !== null && t3VolRatio <= 0.75);
+
+      const tSeqHtml = calcC.length === 3
+        ? `T1($${calcC[0].low}~$${calcC[0].high}, -${calcC[0].depth_pct}%) → T2($${calcC[1].low}~$${calcC[1].high}, -${calcC[1].depth_pct}%) → T3($${calcC[2].low}~$${calcC[2].high}, -${calcC[2].depth_pct}%)`
+        : "60일 구간 데이터 부족";
+
+      document.getElementById("setup-kr-comment").innerHTML = `
+        <span>현재 매수 판정은 <strong>'${entKrS[s.entry_status] || s.entry_status}'</strong>, 차트 모양은 <strong>'${patKrS[s.pattern_status] || s.pattern_status}'</strong>입니다.</span>
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 mt-2.5 text-[11px]">
+          <div class="bg-white p-2 rounded-lg border border-slate-200">
+            <span class="font-bold ${c1Pass ? "text-emerald-700" : "text-rose-700"}">${c1Pass ? "✓" : "✕"} ① 선행 상승추세 (+25%↑):</span>
+            ${priorUp !== null && priorUp !== undefined ? `+${priorUp}%` : "120일 이상 데이터 필요"}
+          </div>
+          <div class="bg-white p-2 rounded-lg border border-slate-200">
+            <span class="font-bold ${c2Pass ? "text-emerald-700" : "text-rose-700"}">${c2Pass ? "✓" : "✕"} ② 60일 3단계 수축 (T1&gt;T2≥T3):</span>
+            <div class="text-[10px] text-slate-600 mt-0.5 tabular-nums">${tSeqHtml}</div>
+          </div>
+          <div class="bg-white p-2 rounded-lg border border-slate-200">
+            <span class="font-bold ${c3Pass ? "text-emerald-700" : "text-rose-700"}">${c3Pass ? "✓" : "✕"} ③ 마지막 수축 폭 (12% 이내):</span>
+            ${calcC.length === 3 ? `T3 변동폭 -${calcC[2].depth_pct}%` : "-"}
+          </div>
+          <div class="bg-white p-2 rounded-lg border border-slate-200">
+            <span class="font-bold ${c4Pass ? "text-emerald-700" : "text-rose-700"}">${c4Pass ? "✓" : "✕"} ④ 거래량 건조 (50일 평균 0.75배↓):</span>
+            ${t3VolRatio !== null ? `T3 구간 평균 ${t3VolRatio}배` : (c4Pass ? "충족" : "기준 미달")}
+          </div>
+        </div>
+      `;
 
       const useLong = s.longCache && s.longCache[state.setupPeriod];
       const activePrices = useLong ? useLong.prices : s.prices;
@@ -2110,7 +2166,7 @@ python -m unittest discover -s tests -v</pre>
         prior_runup_pct: x.prior_runup_pct ?? null, drawdown_from_peak_pct: x.drawdown_from_peak_pct ?? null,
         rule_50_80_status: x.rule_50_80_status ?? null,
         sepa_fund_badge: x.fundamentals?.sepa_fund_badge || (typeof (x.fundamentals?.eps_growth_yoy ?? x.eps_growth_yoy) === "number" && (x.fundamentals?.eps_growth_yoy ?? x.eps_growth_yoy) >= 25 ? "고성장 (EPS 25%↑)" : "미수집"),
-        pattern_status: x.pattern_status || "VCP_CANDIDATE", pivot: Number(x.pivot || x.price || 100),
+        pattern_status: x.pattern_status || "VCP_CANDIDATE", contractions: x.contractions || null, prior_uptrend_pct: x.prior_uptrend_pct ?? null, vol_dryup: x.vol_dryup ?? null, pivot: Number(x.pivot || x.price || 100),
         pivot_distance_pct: Number(x.pivot_distance_pct || 0), vol_ratio: Number(x.vol_ratio || 1.0),
         entry_status: x.entry_status || "WATCH", universe_status: x.universe_status || "ACTIONABLE", universe_reason: x.universe_reason || "ELIGIBLE",
         dates: Array.isArray(x.dates) ? x.dates : null,
