@@ -1082,6 +1082,20 @@ python -m unittest discover -s tests -v</pre>
     <span id="toast-msg">완료</span>
   </div>
 
+  <!-- VCP Detail / Minervini Reasoning Modal -->
+  <div id="vcp-detail-modal" class="fixed inset-0 z-50 hidden items-center justify-center bg-slate-900/50 backdrop-blur-sm p-4">
+    <div class="bg-white rounded-2xl max-w-2xl w-full p-5 shadow-xl border border-slate-200 space-y-4 max-h-[85vh] overflow-y-auto">
+      <div class="flex items-center justify-between border-b border-slate-100 pb-3">
+        <h3 id="vcp-detail-title" class="text-base font-bold text-slate-900">미너비니 VCP 상세 해설</h3>
+        <button type="button" onclick="closeVcpDetailModal()" class="p-1 rounded-lg text-slate-400 hover:text-slate-700"><i data-lucide="x" class="w-5 h-5"></i></button>
+      </div>
+      <div id="vcp-detail-body" class="space-y-3 text-xs text-slate-700 leading-relaxed"></div>
+      <div class="flex justify-end pt-2 border-t border-slate-100">
+        <button type="button" onclick="closeVcpDetailModal()" class="px-4 py-2 rounded-lg bg-slate-900 text-white text-xs font-semibold hover:bg-slate-800">확인</button>
+      </div>
+    </div>
+  </div>
+
   <script>
     // ==================== DEMO DATASET (SEPA V2.0 SCHEMA) ====================
     function makeSeries(start, end, vol, seed) {
@@ -1670,6 +1684,7 @@ python -m unittest discover -s tests -v</pre>
             <div><strong class="text-slate-900">2. 60일 3단계 수축 (T1 &gt; T2 ≥ T3):</strong> ${badgeHtml(c2Pass)}</div>
             <div class="text-[10px] text-slate-700 font-medium mt-0.5 tabular-nums">${tSeqHtml}</div>
             <div class="text-[10px] text-slate-600 mt-1">* <strong>왜 폭이 갈수록 줄어야 하나?</strong> 조정이 반복될수록 급히 팔고 나가는 약한 손(단타 물량)이 털려나가면서 주가 흔들림이 자연스럽게 작아지기 때문입니다.</div>
+            <div class="mt-2"><button type="button" onclick="openVcpDetailModal('contraction')" class="inline-flex items-center gap-1 px-2 py-1 rounded-lg bg-slate-100 hover:bg-indigo-50 text-indigo-700 font-semibold text-[10px] border border-slate-200 hover:border-indigo-200 transition">상세 이유 확인하기 (미너비니 수축 원리)</button></div>
           </div>
 
           <div class="bg-white p-2.5 rounded-xl border ${c3Pass ? "border-emerald-200" : "border-slate-200"}">
@@ -1690,6 +1705,7 @@ python -m unittest discover -s tests -v</pre>
           <div class="bg-white p-2.5 rounded-xl border ${c6Pass ? "border-emerald-200" : "border-slate-200"}">
             <div><strong class="text-slate-900">6. 피벗 돌파 + 거래량 급증 (종가 돌파 &amp; 1.40배↑):</strong> <span class="font-bold">${curVolRatio}배</span> ${badgeHtml(c6Pass, "돌파 충족", "돌파 대기/미달")}</div>
             <div class="text-[10px] text-slate-600 mt-1">* <strong>왜 돌파 시 거래량이 터져야 하나?</strong> 거래량 없는 상승은 개인들의 속임수 반등일 수 있습니다. 1.40배 이상의 거래량이 실려야 기관의 진짜 매집 돌파로 인정합니다.</div>
+            <div class="mt-2"><button type="button" onclick="openVcpDetailModal('breakout')" class="inline-flex items-center gap-1 px-2 py-1 rounded-lg bg-slate-100 hover:bg-indigo-50 text-indigo-700 font-semibold text-[10px] border border-slate-200 hover:border-indigo-200 transition">추가 확인할 내용 (돌파 당일·다음날 대응)</button></div>
           </div>
         </div>
       `;
@@ -1776,7 +1792,7 @@ python -m unittest discover -s tests -v</pre>
           mainSeries = candlePctSeries;
         } else {
           const candleSeries = tvChartInst.addCandlestickSeries({
-            upColor: "#ef4444", downColor: "#2563eb", borderVisible: false, wickUpColor: "#ef4444", wickDownColor: "#2563eb"
+            upColor: "#ef4444", downColor: "#2563eb", borderVisible: false, wickUpColor: "#ef4444", wickDownColor: "#2563eb", priceLineVisible: false
           });
           candleSeries.setData(activeCandles);
           candleSeries.createPriceLine({ price: s.pivot, color: "#2563eb", lineWidth: 1, lineStyle: 2, axisLabelVisible: false, title: "" });
@@ -2571,6 +2587,75 @@ python -m unittest discover -s tests -v</pre>
     lucide.createIcons();
     renderDashboard();
     calculateRiskPlanUI();
+  
+    function openVcpDetailModal(mode) {
+      const modal = document.getElementById("vcp-detail-modal");
+      const titleEl = document.getElementById("vcp-detail-title");
+      const bodyEl = document.getElementById("vcp-detail-body");
+      if (!modal || !titleEl || !bodyEl) return;
+
+      if (mode === "contraction") {
+        titleEl.textContent = "60일 3단계 수축(VCP) — 미너비니의 원리와 상세 기준";
+        bodyEl.innerHTML = `
+          <div class="p-3 rounded-xl bg-slate-50 border border-slate-200">
+            <div class="font-bold text-slate-900 mb-1">1. 조정 횟수와 기간 (왜 60일 3구간으로 보나요?)</div>
+            <p>마크 미너비니의 실제 차트에서는 보통 <strong>2~4번(많게는 6번)</strong> 수축하며, 전체 기간도 수 주에서 수 개월까지 다양합니다. 우리 대시보드는 약 6,000여 개 종목을 매일 같은 기준으로 자동 스캔하기 위해 <strong>최근 60거래일을 20일씩 3구간(T1, T2, T3)</strong>으로 나누어 변동폭 축소 여부를 계산합니다.</p>
+          </div>
+          <div class="p-3 rounded-xl bg-indigo-50/70 border border-indigo-200">
+            <div class="font-bold text-indigo-950 mb-1">2. 이상적인 수축 비율 (약 절반씩 축소)</div>
+            <p>미너비니는 고정된 절대 숫자보다 <strong>각 파동의 하락 폭이 직전 파동의 약 1/2 수준으로 줄어드는 흐름</strong>을 가장 이상적으로 봅니다.<br><span class="text-indigo-800 font-semibold">예시: 25% → 12% → 5% 또는 30% → 15% → 7%</span></p>
+          </div>
+          <div class="p-3 rounded-xl bg-slate-50 border border-slate-200">
+            <div class="font-bold text-slate-900 mb-1">3. 첫 조정(T1)과 마지막 조정(T3)의 허용 상한선</div>
+            <ul class="list-disc pl-4 space-y-1">
+              <li><strong>첫 조정(T1):</strong> 고점 대비 <strong>15%~35% 이내</strong>가 건전합니다. (50% 이상 깊게 빠지면 반등할 때 본전 매물 벽이 너무 두꺼워져 상승이 막히기 쉽습니다.)</li>
+              <li><strong>마지막 구간(T3):</strong> 보통 <strong>한 자릿수(~10% 안팎, 대시보드 기준 12% 이내)</strong>로 좁혀져야 손절선(최대 7%)을 짧게 잡고 리스크를 통제한 채 진입할 수 있습니다.</li>
+            </ul>
+          </div>
+          <div class="p-3 rounded-xl bg-emerald-50/70 border border-emerald-200">
+            <div class="font-bold text-emerald-950 mb-1">4. 핵심 원리: 매물 소화, 거래량 건조, 회복 탄력성</div>
+            <p>왼쪽에서 오른쪽으로 갈수록 변동폭이 좁아지는 이유는 조정이 반복될수록 급히 파는 <strong>'약한 손(단타·손절 물량)'이 털려나가고</strong> 기관이 물량을 받아내기 때문입니다. 여기에 <strong>거래량까지 50일 평균 0.75배 이하로 바짝 마르면</strong> 시장에 더 이상 팔 사람이 없는 <strong>'매물 진공 상태'</strong>가 완성되며, 시장 하락 시 덜 빠지고 빠르게 전고점(피벗)으로 회복하는 '테니스 공' 탄력성을 보여줍니다.</p>
+          </div>
+        `;
+      } else {
+        titleEl.textContent = "피벗 돌파 당일 & 다음날 이후 — 추가 확인할 내용";
+        bodyEl.innerHTML = `
+          <div class="p-3 rounded-xl bg-indigo-50/70 border border-indigo-200">
+            <div class="font-bold text-indigo-950 mb-1">1. 돌파 당일(D-Day) 필수 점검</div>
+            <ul class="list-disc pl-4 space-y-1">
+              <li><strong>종가 안착 &amp; 거래량:</strong> 장중에 잠깐 피벗을 넘었다 내려오는 것보다, <strong>종가가 피벗 위(일중 고가 근처)에서 마감</strong>하고 <strong>50일 평균 대비 1.40배(+40%) 이상</strong> 거래량이 실려야 진짜 기관 돌파입니다.</li>
+              <li><strong>+5% 추격 매수 금지:</strong> 피벗 가격보다 이미 <strong>+5% 이상 오른 상태</strong>에서는 손절선(피벗 아래 7%)까지의 손실 위험이 너무 커지므로 추격 매수하지 않고 다음 눌림을 기다립니다.</li>
+            </ul>
+          </div>
+          <div class="p-3 rounded-xl bg-slate-50 border border-slate-200">
+            <div class="font-bold text-slate-900 mb-1">2. 돌파 다음날(D+1) 이후 보통 일어나는 3가지 현상</div>
+            <div class="space-y-2 mt-1">
+              <div><strong class="text-emerald-700">① 즉각적인 후속 상승 (Follow-Through — 최상):</strong> 다음날에도 갭상승 또는 양봉으로 강하게 뻗어나갑니다. 추가 추격 없이 보유하며, 수익이 <strong>+10% 이상</strong> 나면 손절선을 <strong>매수가(본전)</strong>로 올려 무손실 상태로 만듭니다.</div>
+              <div><strong class="text-sky-700">② 피벗 라인 되돌림 테스트 (Pullback to Pivot — 매우 흔함):</strong> 돌파 다음날~며칠 내로 <strong>돌파했던 피벗 선까지 다시 내려와 지지를 확인</strong>하는 경우가 자주 있습니다. 이때 <strong>거래량이 급감(평균 이하)</strong>하면서 피벗이나 10·20일선을 지키면 정상 흐름이므로 보유합니다. 반대로 <strong>대량 거래량이 터지며 피벗 아래로 깊게 밀려 마감</strong>하면 실패 신호로 경계합니다.</div>
+              <div><strong class="text-amber-700">③ 스쿼트 (Squat — 윗꼬리 후 피벗 아래 복귀):</strong> 당일 피벗을 뚫었다가 장 막판에 밀려 윗꼬리를 달고 마감하는 현상입니다. 미너비니는 즉시 공포 손절하지 말고 1~2일 관찰한 뒤, <strong>거래량이 줄면서 좁게 버티다 고점을 재돌파</strong>하면 유지하고 <strong>7% 손절선</strong>에 닿으면 기계적으로 손절합니다.</div>
+            </div>
+          </div>
+          <div class="p-3 rounded-xl bg-rose-50/70 border border-rose-200">
+            <div class="font-bold text-rose-950 mb-1">3. 돌파 후 절대 금지 2가지</div>
+            <p>손절선을 아래로 넓히거나, 돌파 후 밀린다고 <strong>손실 종목에 물타기(추가 매수)</strong>를 하는 것은 미너비니 원칙에서 절대 금지입니다.</p>
+          </div>
+        `;
+      }
+
+      modal.classList.remove("hidden");
+      modal.classList.add("flex");
+      if (window.lucide) lucide.createIcons();
+    }
+
+    function closeVcpDetailModal() {
+      const modal = document.getElementById("vcp-detail-modal");
+      if (!modal) return;
+      modal.classList.add("hidden");
+      modal.classList.remove("flex");
+    }
+    document.getElementById("vcp-detail-modal")?.addEventListener("click", (e) => {
+      if (e.target.id === "vcp-detail-modal") closeVcpDetailModal();
+    });
   </script>
 </body>
 </html>
