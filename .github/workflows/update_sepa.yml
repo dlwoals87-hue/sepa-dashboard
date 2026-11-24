@@ -1,0 +1,47 @@
+name: Update SEPA V2.0 Market Data
+
+on:
+  schedule:
+    # Run every Tue-Sat at 07:30 KST (22:30 UTC Mon-Fri, after US market close)
+    - cron: "30 22 * * 1-5"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  update-data:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: |
+          pip install --upgrade pip
+          pip install finvizfinance yfinance pandas numpy openpyxl
+
+      - name: Restore OHLCV cache if present
+        uses: actions/cache@v4
+        with:
+          path: ohlcv_cache.pkl
+          key: sepa-ohlcv-v2-${{ github.run_id }}
+          restore-keys: |
+            sepa-ohlcv-v2-
+
+      - name: Run SEPA V2.0 Pipeline
+        run: |
+          python run_pipeline.py
+
+      - name: Commit and push updated JSON/CSV/Excel
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add sepa_dashboard_data.json sepa_candidates.csv sepa_report_v2.xlsx
+          git diff --staged --quiet || git commit -m "chore: update SEPA market data ($(date -u +%Y-%m-%d))"
+          git push
