@@ -82,26 +82,29 @@
             </div>
           </div>
           <div class="flex flex-wrap gap-2 text-xs">
-            <button type="button" onclick="openVcpDetailModal('breadth')" class="text-left bg-slate-50 hover:bg-indigo-50/70 px-3 py-1.5 rounded-xl border border-slate-200 hover:border-indigo-300 transition cursor-pointer" title="클릭하면 과거 비교 기준과 미너비니식 활용법을 볼 수 있습니다">
-              <div class="text-[11px] text-slate-500">단기 상승폭 (50일선 위)</div>
+            <button type="button" onclick="openVcpDetailModal('b50')" class="text-left bg-slate-50 hover:bg-indigo-50/70 px-3 py-1.5 rounded-xl border border-slate-200 hover:border-indigo-300 transition cursor-pointer" title="클릭하면 단기 상승폭 산출 공식과 모수(적격 기업) 기준 이유를 볼 수 있습니다">
+              <div class="text-[11px] text-slate-500">단기 (50일선 위 비중)</div>
               <div class="flex items-baseline gap-1.5 mt-0.5">
-                <span id="regime-b50" class="font-bold text-slate-900 tabular-nums text-sm">58%</span>
-                <span id="regime-b50-tag" class="text-[10px] font-semibold text-slate-500">기준 55%↑</span>
+                <span id="regime-b50" class="font-bold text-slate-900 tabular-nums text-sm">-</span>
+                <span id="regime-b50-tag" class="text-[10px] font-semibold text-slate-500">-</span>
               </div>
+              <div id="regime-b50-sub" class="text-[10px] text-slate-400 tabular-nums mt-0.5">산식·세부내용 클릭</div>
             </button>
-            <button type="button" onclick="openVcpDetailModal('breadth')" class="text-left bg-slate-50 hover:bg-indigo-50/70 px-3 py-1.5 rounded-xl border border-slate-200 hover:border-indigo-300 transition cursor-pointer" title="클릭하면 과거 비교 기준과 미너비니식 활용법을 볼 수 있습니다">
-              <div class="text-[11px] text-slate-500">장기 상승폭 (200일선 위)</div>
+            <button type="button" onclick="openVcpDetailModal('b200')" class="text-left bg-slate-50 hover:bg-indigo-50/70 px-3 py-1.5 rounded-xl border border-slate-200 hover:border-indigo-300 transition cursor-pointer" title="클릭하면 장기 상승폭 산출 공식과 모수(적격 기업) 기준 이유를 볼 수 있습니다">
+              <div class="text-[11px] text-slate-500">장기 (200일선 위 비중)</div>
               <div class="flex items-baseline gap-1.5 mt-0.5">
-                <span id="regime-b200" class="font-bold text-slate-900 tabular-nums text-sm">64%</span>
-                <span id="regime-b200-tag" class="text-[10px] font-semibold text-slate-500">기준 60%↑</span>
+                <span id="regime-b200" class="font-bold text-slate-900 tabular-nums text-sm">-</span>
+                <span id="regime-b200-tag" class="text-[10px] font-semibold text-slate-500">-</span>
               </div>
+              <div id="regime-b200-sub" class="text-[10px] text-slate-400 tabular-nums mt-0.5">산식·세부내용 클릭</div>
             </button>
-            <button type="button" onclick="openVcpDetailModal('breadth')" class="text-left bg-slate-50 hover:bg-indigo-50/70 px-3 py-1.5 rounded-xl border border-slate-200 hover:border-indigo-300 transition cursor-pointer" title="클릭하면 과거 비교 기준과 미너비니식 활용법을 볼 수 있습니다">
+            <button type="button" onclick="openVcpDetailModal('leader')" class="text-left bg-slate-50 hover:bg-indigo-50/70 px-3 py-1.5 rounded-xl border border-slate-200 hover:border-indigo-300 transition cursor-pointer" title="클릭하면 주도주 건강도 산출 공식과 선행 경보 의미를 볼 수 있습니다">
               <div class="text-[11px] text-slate-500">주도주 건강도 (RS80+)</div>
               <div class="flex items-baseline gap-1.5 mt-0.5">
-                <span id="regime-leader-pct" class="font-bold text-slate-900 tabular-nums text-sm">62%</span>
-                <span id="regime-leader-tag" class="text-[10px] font-semibold text-slate-500">기준 70%↑</span>
+                <span id="regime-leader-pct" class="font-bold text-slate-900 tabular-nums text-sm">-</span>
+                <span id="regime-leader-tag" class="text-[10px] font-semibold text-slate-500">-</span>
               </div>
+              <div id="regime-leader-sub" class="text-[10px] text-slate-400 tabular-nums mt-0.5">산식·세부내용 클릭</div>
             </button>
           </div>
         </div>
@@ -1277,20 +1280,36 @@ python -m unittest discover -s tests -v</pre>
 
       // Dynamic Today's Minervini Market Briefing & Comparative Breadth Tags
       const rg = currentRegimeData || {};
-      const b50Val = rg.breadth_above_50d_pct;
-      const b200Val = rg.breadth_above_200d_pct;
+      const b50Val = rg.pct_above_50_sma ?? rg.breadth_above_50d_pct;
+      const b200Val = rg.pct_above_200_sma ?? rg.breadth_above_200d_pct;
       const lPctVal = rg.leader_tt_pass_pct;
 
-      const setTag = (id, val, hi, mid, hiTxt, midTxt, loTxt) => {
-        const el = document.getElementById(id);
-        if (!el || val === undefined || val === null) return;
-        if (val >= hi) { el.textContent = hiTxt; el.className = "text-[10px] font-semibold text-emerald-600"; }
-        else if (val >= mid) { el.textContent = midTxt; el.className = "text-[10px] font-semibold text-amber-600"; }
-        else { el.textContent = loTxt; el.className = "text-[10px] font-semibold text-rose-600"; }
+      const totalElig = eligible.length;
+      const cnt50 = b50Val != null ? Math.round((totalElig * b50Val) / 100) : null;
+      const cnt200 = b200Val != null ? Math.round((totalElig * b200Val) / 100) : null;
+      const rs80List = eligible.filter(s => s.system_rs_rank >= 80);
+      const rs80PassCnt = rs80List.filter(s => s.tt_status === "PASS").length;
+
+      const sub50 = document.getElementById("regime-b50-sub");
+      const sub200 = document.getElementById("regime-b200-sub");
+      const subLdr = document.getElementById("regime-leader-sub");
+      if (sub50 && cnt50 !== null) sub50.textContent = `${totalElig.toLocaleString()}개 중 약 ${cnt50.toLocaleString()}개`;
+      if (sub200 && cnt200 !== null) sub200.textContent = `${totalElig.toLocaleString()}개 중 약 ${cnt200.toLocaleString()}개`;
+      if (subLdr && rs80List.length > 0) subLdr.textContent = `RS80+ ${rs80List.length}개 중 ${rs80PassCnt}개`;
+
+      const getStatusMeta = (val, hi, mid, hiTxt, midTxt, loTxt) => {
+        if (val === undefined || val === null) return { txt: "-", cls: "text-slate-500", pill: "bg-slate-100 text-slate-600 border-slate-200" };
+        if (val >= hi) return { txt: hiTxt, cls: "text-emerald-600", pill: "bg-emerald-50 text-emerald-800 border-emerald-200" };
+        if (val >= mid) return { txt: midTxt, cls: "text-amber-600", pill: "bg-amber-50 text-amber-800 border-amber-200" };
+        return { txt: loTxt, cls: "text-rose-600", pill: "bg-rose-50 text-rose-800 border-rose-200" };
       };
-      setTag("regime-b50-tag", b50Val, 55, 45, "강세(55%↑)", "혼조(45~54%)", "약세(50%↓)");
-      setTag("regime-b200-tag", b200Val, 60, 50, "건전(60%↑)", "중립(50~59%)", "침체(50%↓)");
-      setTag("regime-leader-tag", lPctVal, 70, 55, "탄탄(70%↑)", "보통(55~69%)", "균열(55%↓)");
+      const m50 = getStatusMeta(b50Val, 55, 45, "강세(55%↑)", "혼조(45~54%)", "약세(50%↓)");
+      const m200 = getStatusMeta(b200Val, 60, 50, "건전(60%↑)", "중립(50~59%)", "침체(50%↓)");
+      const mLdr = getStatusMeta(lPctVal, 70, 55, "탄탄(70%↑)", "보통(55~69%)", "균열(55%↓)");
+
+      const t50 = document.getElementById("regime-b50-tag"); if (t50) { t50.textContent = m50.txt; t50.className = `text-[10px] font-semibold ${m50.cls}`; }
+      const t200 = document.getElementById("regime-b200-tag"); if (t200) { t200.textContent = m200.txt; t200.className = `text-[10px] font-semibold ${m200.cls}`; }
+      const tLdr = document.getElementById("regime-leader-tag"); if (tLdr) { tLdr.textContent = mLdr.txt; tLdr.className = `text-[10px] font-semibold ${mLdr.cls}`; }
 
       const briefEl = document.getElementById("dash-minervini-brief");
       if (briefEl) {
@@ -1299,28 +1318,34 @@ python -m unittest discover -s tests -v</pre>
         const b50Str = b50Val !== undefined ? `${b50Val}%` : "-";
         const b200Str = b200Val !== undefined ? `${b200Val}%` : "-";
         const lPctStr = lPctVal !== undefined ? `${lPctVal}%` : "-";
-        const rs80Cnt = eligible.filter(s => s.system_rs_rank >= 80).length;
         const vcpCnt = eligible.filter(s => s.pattern_status === "VCP_VALIDATED" || s.pattern_status === "VCP_REVIEW_REQUIRED").length;
-        const spyTxt = spyObj.close ? `SPY $${spyObj.close}(${spyObj.above_200 ? "200일선 위" : "200일선 아래"})` : "SPY";
-        const qqqTxt = qqqObj.close ? `QQQ $${qqqObj.close}(${qqqObj.above_200 ? "200일선 위" : "200일선 아래"})` : "QQQ";
+        const spyTxt = spyObj.close ? `SPY $${spyObj.close}(${spyObj.above_200 ? "200일선↑" : "200일선↓"})` : "SPY";
+        const qqqTxt = qqqObj.close ? `QQQ $${qqqObj.close}(${qqqObj.above_200 ? "200일선↑" : "200일선↓"})` : "QQQ";
 
-        let line1 = `<strong>① 현재 시장 체력 비교:</strong> ${spyTxt} · ${qqqTxt} | 단기(50일선 위) <strong>${b50Str}</strong>(강세장 평균 55~75%), 장기(200일선 위) <strong>${b200Str}</strong>(강세장 평균 60~80%), 주도주 건강도 <strong>${lPctStr}</strong>(강세장 70%↑).`;
+        const line1 = `
+          <div class="flex flex-wrap items-center gap-1.5">
+            <strong>① 현재 시장 체력:</strong>
+            <span class="px-2 py-0.5 rounded-md bg-white border border-slate-200 text-[11px] font-semibold text-slate-700">${spyTxt} · ${qqqTxt}</span>
+            <span class="px-2 py-0.5 rounded-md border text-[11px] font-semibold ${m50.pill}">단기(50일선↑ 기업) ${b50Str} · ${m50.txt}</span>
+            <span class="px-2 py-0.5 rounded-md border text-[11px] font-semibold ${m200.pill}">장기(200일선↑ 기업) ${b200Str} · ${m200.txt}</span>
+            <span class="px-2 py-0.5 rounded-md border text-[11px] font-semibold ${mLdr.pill}">주도주 건강도 ${lPctStr} · ${mLdr.txt}</span>
+          </div>`;
         let line2 = "";
         let line3 = "";
         if (regName === "RISK_OFF") {
-          line2 = `<strong>② 과거 동일 구간 특징:</strong> 지금처럼 50·200일선 위 비율이 30~40%대이고 <strong>주도주 건강도까지 50% 아래</strong>로 떨어진 장에서는, 과거에도 가장 강한 종목조차 돌파 후 2~3일 만에 밀려 손절이 연쇄적으로 발생했습니다.`;
-          line3 = `<strong>③ 오늘 실전 대응 &amp; 재개 조건:</strong> 신규 매수를 쉬고 현금을 지키세요. 대신 하락장에서도 살아남은 <strong>상승추세 합격 ${ttPass.length}개(VCP ${vcpCnt}개 · RS 80+ ${rs80Cnt}개)</strong>만 관심종목에 모아두었다가, <strong>단기 상승폭이 50%↑ + 주도주 건강도가 60%↑로 회복</strong>될 때부터 소액 진입을 시작합니다.`;
+          line2 = `<strong>② 과거 동일 구간 특징:</strong> 지금처럼 50·200일선 위 기업 비중이 30~40%대이고 <strong>주도주 건강도까지 50% 아래</strong>로 떨어진 장에서는, 과거에도 가장 강한 종목조차 돌파 후 2~3일 만에 밀려 손절이 연쇄적으로 발생했습니다.`;
+          line3 = `<strong>③ 오늘 실전 대응 &amp; 재개 조건:</strong> 신규 매수를 쉬고 현금을 지키세요. 대신 하락장에서도 살아남은 <strong>상승추세 합격 ${ttPass.length}개(VCP ${vcpCnt}개 · RS 80+ ${rs80List.length}개)</strong>만 관심종목에 모아두었다가, <strong>단기 비중 50%↑ + 주도주 건강도 60%↑로 회복</strong>될 때부터 소액 진입을 시작합니다.`;
         } else if (regName === "DEFENSIVE") {
           line2 = `<strong>② 과거 동일 구간 특징:</strong> 지수 체력이 약해 주도주가 좁은 일부 섹터에만 국한되고 돌파 실패율이 높습니다.`;
           line3 = `<strong>③ 오늘 실전 대응:</strong> 현금 70~80% 이상을 유지하며, RS 85+ 최상위 주도주의 VCP 완성 여부만 관찰하세요.`;
         } else if (regName === "RISK_ON") {
-          line2 = `<strong>② 과거 동일 구간 특징:</strong> 50·200일선 위 비율이 높고 주도주 다수가 정배열을 유지해, VCP 돌파 후 추세가 길게 이어지는 전형적인 수익 구간입니다.`;
+          line2 = `<strong>② 과거 동일 구간 특징:</strong> 50·200일선 위 기업 비중이 높고 주도주 다수가 정배열을 유지해, VCP 돌파 후 추세가 길게 이어지는 전형적인 수익 구간입니다.`;
           line3 = `<strong>③ 오늘 실전 대응:</strong> 상승추세 합격 ${ttPass.length}개 중 VCP 수축 + 거래량 1.40배↑ 돌파 종목을 적극 공략하되, 피벗 +5% 이상 추격 매수는 피하세요.`;
         } else {
           line2 = `<strong>② 과거 동일 구간 특징:</strong> 오르는 종목과 빠지는 종목이 섞여 있어, 종목 선별을 잘못하면 지수는 버텨도 계좌가 흔들릴 수 있습니다.`;
           line3 = `<strong>③ 오늘 실전 대응:</strong> 평소 절반 이하 소액으로만 시범 매수하고, 먼저 산 종목이 수익이 날 때만 비중을 늘리는 피드백 루프 원칙을 지키세요.`;
         }
-        briefEl.innerHTML = `<div class="space-y-1 mt-0.5"><div>${line1}</div><div>${line2}</div><div>${line3}</div></div>`;
+        briefEl.innerHTML = `<div class="space-y-1.5 mt-0.5">${line1}<div>${line2}</div><div>${line3}</div></div>`;
       }
 
       let rows = eligible;
@@ -1597,7 +1622,7 @@ python -m unittest discover -s tests -v</pre>
         document.getElementById("mkt-qqq-ftd").textContent = translateProxy(rg.qqq_ftd_proxy, "QQQ");
 
         const regName = rg.regime || "CAUTION";
-        const b200 = rg.breadth_above_200d_pct !== undefined ? `${rg.breadth_above_200d_pct}%` : "-";
+        const b200Raw = rg.pct_above_200_sma ?? rg.breadth_above_200d_pct; const b200 = b200Raw !== undefined ? `${b200Raw}%` : "-";
         let feelAction = "";
         if (regName === "RISK_OFF") {
           feelAction = "<strong>① 지금 느낄 점:</strong> 지수와 종목 다수가 200일선 아래라 매수해도 손절당하기 쉬운 환경입니다.<br><strong>② 오늘 할 일:</strong> 억지 매수를 멈추고 <strong>현금을 지키면서</strong>, 아래 표에서 강한 섹터의 '상승추세 합격 종목'만 눌러 관심목록에 담아두세요. 상승 전환일(FTD) + 개별주 돌파 성공이 확인될 때 다시 진입합니다.";
@@ -2827,60 +2852,132 @@ python -m unittest discover -s tests -v</pre>
             <p>왼쪽에서 오른쪽으로 갈수록 변동폭이 좁아지는 이유는 조정이 반복될수록 급히 파는 <strong>'약한 손(단타·손절 물량)'이 털려나가고</strong> 기관이 물량을 받아내기 때문입니다. 여기에 <strong>거래량까지 50일 평균 0.75배 이하로 바짝 마르면</strong> 시장에 더 이상 팔 사람이 없는 <strong>'매물 진공 상태'</strong>가 완성되며, 시장 하락 시 덜 빠지고 빠르게 전고점(피벗)으로 회복하는 '테니스 공' 탄력성을 보여줍니다.</p>
           </div>
         `;
-      } else if (mode === "breadth") {
-        titleEl.textContent = "시장 폭(Breadth) 3대 지표 — 과거 비교 기준 & 미너비니식 활용법";
-        bodyEl.innerHTML = `
-          <div class="p-3 rounded-xl bg-slate-50 border border-slate-200 overflow-x-auto">
-            <div class="font-bold text-slate-900 mb-2">1. 과거 시장 국면별 3대 지표 비교표</div>
-            <table class="w-full text-left border-collapse text-[11px]">
-              <thead>
-                <tr class="border-b border-slate-300 text-slate-600">
-                  <th class="py-1.5 pr-2">시장 국면</th>
-                  <th class="py-1.5 px-2">단기 (50일선 위)</th>
-                  <th class="py-1.5 px-2">장기 (200일선 위)</th>
-                  <th class="py-1.5 px-2">주도주 건강도</th>
-                  <th class="py-1.5 pl-2">미너비니 대응</th>
-                </tr>
-              </thead>
-              <tbody class="divide-y divide-slate-200">
-                <tr class="bg-emerald-50/50">
-                  <td class="py-1.5 pr-2 font-bold text-emerald-800">건강한 강세장</td>
-                  <td class="py-1.5 px-2">55% ~ 75%</td>
-                  <td class="py-1.5 px-2">60% ~ 80%</td>
-                  <td class="py-1.5 px-2">70% ~ 85%</td>
-                  <td class="py-1.5 pl-2">적극 매수·비중 확대</td>
-                </tr>
-                <tr>
-                  <td class="py-1.5 pr-2 font-bold text-amber-700">혼조 / 전환기</td>
-                  <td class="py-1.5 px-2">45% ~ 55%</td>
-                  <td class="py-1.5 px-2">45% ~ 59%</td>
-                  <td class="py-1.5 px-2">55% ~ 69%</td>
-                  <td class="py-1.5 pl-2">소액 시범 매수만</td>
-                </tr>
-                <tr class="bg-rose-50/50">
-                  <td class="py-1.5 pr-2 font-bold text-rose-800">약세 / 침체장</td>
-                  <td class="py-1.5 px-2">45% 미만</td>
-                  <td class="py-1.5 px-2">50% 미만</td>
-                  <td class="py-1.5 px-2">55% 미만</td>
-                  <td class="py-1.5 pl-2">현금 보유·관망</td>
-                </tr>
-                <tr>
-                  <td class="py-1.5 pr-2 font-bold text-indigo-700">극단적 과매도 바닥</td>
-                  <td class="py-1.5 px-2">20% 이하</td>
-                  <td class="py-1.5 px-2">25% 이하</td>
-                  <td class="py-1.5 px-2">30% 이하</td>
-                  <td class="py-1.5 pl-2">투매 마무리·FTD 주시</td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
-          <div class="p-3 rounded-xl bg-indigo-50/70 border border-indigo-200 space-y-1.5">
-            <div class="font-bold text-indigo-950">2. 각 지표를 내 매매에 활용하는 핵심 포인트</div>
-            <p><strong>• 단기 상승폭 (50일선 위 %):</strong> 시장의 단기 탄력입니다. 약세장에서 이 수치가 <strong>50%를 다시 위로 돌파</strong>할 때부터 단기 스윙 승률이 살아납니다. 반대로 80%를 넘기면 단기 과열로 조정을 경계합니다.</p>
-            <p><strong>• 장기 상승폭 (200일선 위 %):</strong> 시장의 기초 체력입니다. 50% 아래일 때는 하락 추세 종목이 절반을 넘는다는 뜻이므로 '싸 보인다'고 섣불리 매수하면 추가 하락에 물리기 쉽습니다.</p>
-            <p><strong>• 주도주 건강도 (RS 80+ 중 TT 합격 비율):</strong> 미너비니가 가장 중시하는 선행 경보입니다. 시장에서 가장 강한 상위 20% 종목조차 절반 이상이 상승추세 조건을 잃었다면(50% 미만), 조만간 지수도 약해지거나 돌파가 막힌다는 신호입니다. 반대로 <strong>지수가 아직 애매해도 이 수치가 60~70% 이상으로 먼저 올라오면</strong> 새로운 주도주 장세가 열리고 있다는 신호로 활용합니다.</p>
-          </div>
-        `;
+      } else if (mode === "b50" || mode === "b200" || mode === "leader" || mode === "breadth") {
+        const rg = currentRegimeData || {};
+        const eligible = stocks.filter(s => s.universe_status !== "EXCLUDED");
+        const totalElig = eligible.length;
+        const totalAll = stocks.length;
+        const b50Val = rg.pct_above_50_sma ?? rg.breadth_above_50d_pct;
+        const b200Val = rg.pct_above_200_sma ?? rg.breadth_above_200d_pct;
+        const lPctVal = rg.leader_tt_pass_pct;
+        const cnt50 = b50Val != null ? Math.round((totalElig * b50Val) / 100) : null;
+        const cnt200 = b200Val != null ? Math.round((totalElig * b200Val) / 100) : null;
+        const rs80List = eligible.filter(s => s.system_rs_rank >= 80);
+        const rs80PassCnt = rs80List.filter(s => s.tt_status === "PASS").length;
+
+        const whyEligibleHtml = `
+          <div class="p-3 rounded-xl bg-amber-50/70 border border-amber-200 space-y-1 text-[11px]">
+            <div class="font-bold text-amber-950">왜 전체 상장사(약 ${totalAll > totalElig ? totalAll.toLocaleString() : "6,330"}개)가 아닌 '적격 기업 ${totalElig.toLocaleString()}개' 기준인가요?</div>
+            <p>미국 전체 상장사에는 <strong>ETF·ETN·스팩(SPAC)·우선주·$10 미만 동전주·거래대금 부족 소형주·적자 테마주</strong>가 수천 개 섞여 있습니다. 이런 종목을 모수에 포함하면 진짜 강세장에서도 200일선 위 비율이 낮게 찍혀 시장 온도 측정이 왜곡됩니다.</p>
+            <p>우리 시스템은 <strong>주가 $10↑ · 일 평균 거래대금 $1,000만↑ · 상장 1년↑ · 흑자(EPS&gt;0)</strong> 등 기관이 실제로 매매할 수 있는 <strong>'진짜 기업 시장(${totalElig.toLocaleString()}개)'</strong>만 걸러내어 시장 폭을 계산합니다.</p>
+          </div>`;
+
+        if (mode === "b50") {
+          titleEl.textContent = "단기 상승폭 (50일선 위 기업 비중) — 산출 공식 · 상세 해설";
+          bodyEl.innerHTML = `
+            <div class="p-3 rounded-xl bg-slate-50 border border-slate-200 space-y-1.5 text-xs">
+              <div class="font-bold text-slate-900">1. 산출 공식 &amp; 오늘 실제 계산</div>
+              <p class="font-mono text-[11px] bg-white p-2 rounded-lg border border-slate-200">(50일 이동평균선 위 적격 기업 수 ÷ 전체 적격 기업 ${totalElig.toLocaleString()}개) × 100 = <strong>${b50Val ?? "-"}%</strong>${cnt50 !== null ? ` (약 ${cnt50.toLocaleString()}개)` : ""}</p>
+              <p class="text-[11px] text-slate-600">50일선은 기관의 중·단기 수급선입니다. 이 비율은 현재 시장에서 단기 상승 탄력을 유지하고 있는 기업이 얼마나 되는지 보여줍니다.</p>
+            </div>
+            ${whyEligibleHtml}
+            <div class="p-3 rounded-xl bg-indigo-50/70 border border-indigo-200 space-y-1 text-[11px]">
+              <div class="font-bold text-indigo-950">2. 미너비니식 해석 &amp; 실전 기준</div>
+              <p><strong>• 55% ~ 75% (건강한 단기 탄력):</strong> 대다수 종목이 50일선 위에서 활발히 움직이는 매수 우위 구간입니다.</p>
+              <p><strong>• 50% 미만 (단기 약세 · 현재 ${b50Val ?? "-"}%):</strong> 정상 기업 10개 중 6개 이상이 단기 하락세입니다. 이 수치가 <strong>50%를 다시 위로 돌파할 때</strong>부터 단기 돌파 승률이 살아납니다.</p>
+              <p><strong>• 80%↑ / 20%↓ (극단치):</strong> 80% 이상은 단기 과열(차익 매물 주의), 20% 이하는 투매 막바지(반등 임박) 신호로 봅니다.</p>
+            </div>`;
+        } else if (mode === "b200") {
+          titleEl.textContent = "장기 상승폭 (200일선 위 기업 비중) — 산출 공식 · 상세 해설";
+          bodyEl.innerHTML = `
+            <div class="p-3 rounded-xl bg-slate-50 border border-slate-200 space-y-1.5 text-xs">
+              <div class="font-bold text-slate-900">1. 산출 공식 &amp; 오늘 실제 계산</div>
+              <p class="font-mono text-[11px] bg-white p-2 rounded-lg border border-slate-200">(200일 이동평균선 위 적격 기업 수 ÷ 전체 적격 기업 ${totalElig.toLocaleString()}개) × 100 = <strong>${b200Val ?? "-"}%</strong>${cnt200 !== null ? ` (약 ${cnt200.toLocaleString()}개)` : ""}</p>
+              <p class="text-[11px] text-slate-600">200일선은 1년(약 200거래일) 평균 주가로, 시장의 장기적인 기초 체력과 대세 방향을 가르는 가장 중요한 기준선입니다.</p>
+            </div>
+            ${whyEligibleHtml}
+            <div class="p-3 rounded-xl bg-indigo-50/70 border border-indigo-200 space-y-1 text-[11px]">
+              <div class="font-bold text-indigo-950">2. 미너비니식 해석 &amp; 실전 기준</div>
+              <p><strong>• 60% ~ 80% (대세 강세장):</strong> 시장 대부분이 장기 상승 추세(Stage 2)에 있어 추세 매매의 기대수익이 가장 높습니다.</p>
+              <p><strong>• 50% 미만 (장기 침체 · 현재 ${b200Val ?? "-"}%):</strong> 적격 기업 절반 이상이 장기 하락 추세(Stage 3~4)에 빠진 상태입니다. '많이 빠져서 싸 보인다'고 매수하면 추가 하락에 물리기 쉬우므로 <strong>50% 이상 회복</strong>을 확인해야 합니다.</p>
+            </div>`;
+        } else if (mode === "leader") {
+          titleEl.textContent = "주도주 건강도 (RS 80+ 중 합격 비중) — 산출 공식 · 상세 해설";
+          bodyEl.innerHTML = `
+            <div class="p-3 rounded-xl bg-slate-50 border border-slate-200 space-y-1.5 text-xs">
+              <div class="font-bold text-slate-900">1. 산출 공식 &amp; 오늘 실제 계산</div>
+              <p class="font-mono text-[11px] bg-white p-2 rounded-lg border border-slate-200">(상승추세 10조건 PASS 기업 ${rs80PassCnt}개 ÷ RS 80+ 상위 20% 기업 ${rs80List.length}개) × 100 = <strong>${lPctVal ?? "-"}%</strong></p>
+              <p class="text-[11px] text-slate-600">전체 적격 기업 중 최근 3·6·12개월 주가 상승률 상위 20%(RS 80점 이상)를 뽑은 뒤, 그중 50·150·200일선 정배열 등 미너비니 10가지 조건을 모두 지키는 비율입니다.</p>
+            </div>
+            ${whyEligibleHtml}
+            <div class="p-3 rounded-xl bg-indigo-50/70 border border-indigo-200 space-y-1 text-[11px]">
+              <div class="font-bold text-indigo-950">2. 왜 미너비니가 이 지표를 가장 먼저 보나요?</div>
+              <p><strong>• 선행 경보 역할:</strong> 시장이 꺾일 때는 항상 지수보다 <strong>가장 강했던 주도주들이 먼저 추세 조건을 잃습니다.</strong> 현재 <strong>${lPctVal ?? "-"}%</strong>로 55% 아래라면 상위 20% 강한 종목조차 절반 이상 균열이 났다는 경고입니다.</p>
+              <p><strong>• 강세장 복귀 신호:</strong> 지수가 아직 바닥을 다지더라도 주도주 건강도가 <strong>60~70% 이상으로 먼저 올라오면</strong> 새로운 주도주 장세가 열리고 있다는 신호로 활용합니다.</p>
+            </div>`;
+        } else {
+          titleEl.textContent = "시장 폭(Breadth) 3대 지표 — 과거 비교표 & 활용법";
+          bodyEl.innerHTML = `
+            ${whyEligibleHtml}
+            <div class="p-3 rounded-xl bg-white border border-slate-200 overflow-x-auto">
+              <div class="font-bold text-slate-900 mb-2">과거 시장 국면별 기업 비중 비교표 (현재 내 시장 위치 포함)</div>
+              <table class="w-full text-left border-collapse text-[11px]">
+                <thead>
+                  <tr class="border-b border-slate-300 text-slate-600">
+                    <th class="py-1.5 pr-2">시장 국면</th>
+                    <th class="py-1.5 px-2">50일선↑ 기업 비중</th>
+                    <th class="py-1.5 px-2">200일선↑ 기업 비중</th>
+                    <th class="py-1.5 px-2">RS80+ 중 합격 비중</th>
+                    <th class="py-1.5 pl-2">미너비니 대응</th>
+                  </tr>
+                </thead>
+                <tbody class="divide-y divide-slate-200">
+                  <tr class="bg-indigo-50 font-bold text-indigo-950 border-b-2 border-indigo-200">
+                    <td class="py-2 pr-2">▶ 현재 오늘 시장</td>
+                    <td class="py-2 px-2">${b50Val ?? "-"}%</td>
+                    <td class="py-2 px-2">${b200Val ?? "-"}%</td>
+                    <td class="py-2 px-2">${lPctVal ?? "-"}%</td>
+                    <td class="py-2 pl-2">${rg.policy || "-"}</td>
+                  </tr>
+                  <tr class="bg-emerald-50/50">
+                    <td class="py-1.5 pr-2 font-bold text-emerald-800">건강한 강세장</td>
+                    <td class="py-1.5 px-2">55% ~ 75%</td>
+                    <td class="py-1.5 px-2">60% ~ 80%</td>
+                    <td class="py-1.5 px-2">70% ~ 85%</td>
+                    <td class="py-1.5 pl-2">적극 매수·비중 확대</td>
+                  </tr>
+                  <tr>
+                    <td class="py-1.5 pr-2 font-bold text-amber-700">혼조 / 전환기</td>
+                    <td class="py-1.5 px-2">45% ~ 55%</td>
+                    <td class="py-1.5 px-2">45% ~ 59%</td>
+                    <td class="py-1.5 px-2">55% ~ 69%</td>
+                    <td class="py-1.5 pl-2">소액 시범 매수만</td>
+                  </tr>
+                  <tr class="bg-rose-50/50">
+                    <td class="py-1.5 pr-2 font-bold text-rose-800">약세 / 침체장</td>
+                    <td class="py-1.5 px-2">45% 미만</td>
+                    <td class="py-1.5 px-2">50% 미만</td>
+                    <td class="py-1.5 px-2">55% 미만</td>
+                    <td class="py-1.5 pl-2">현금 보유·관망</td>
+                  </tr>
+                  <tr>
+                    <td class="py-1.5 pr-2 font-bold text-indigo-700">극단적 과매도 바닥</td>
+                    <td class="py-1.5 px-2">20% 이하</td>
+                    <td class="py-1.5 px-2">25% 이하</td>
+                    <td class="py-1.5 px-2">30% 이하</td>
+                    <td class="py-1.5 pl-2">투매 마무리·FTD 주시</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+            <div class="p-3 rounded-xl bg-indigo-50/70 border border-indigo-200 space-y-1.5 text-[11px]">
+              <div class="font-bold text-indigo-950">각 기업 비중을 내 매매에 활용하는 핵심 요약</div>
+              <p><strong>• 50일선 위 기업 비중:</strong> 단기 탄력 지표 — 약세장에서 <strong>50%를 다시 위로 돌파</strong>할 때부터 단기 스윙 승률이 살아납니다.</p>
+              <p><strong>• 200일선 위 기업 비중:</strong> 기초 체력 지표 — 50% 아래면 하락 추세 기업이 절반 이상이므로 저점 매수를 피합니다.</p>
+              <p><strong>• RS80+ 중 합격 비중:</strong> 선행 경보 지표 — 지수보다 먼저 60~70% 이상으로 올라오면 새 주도주 장세의 시작 신호입니다.</p>
+            </div>
+          `;
+        }
       } else {
         titleEl.textContent = "피벗 돌파 당일 & 다음날 이후 — 추가 확인할 내용";
         bodyEl.innerHTML = `
