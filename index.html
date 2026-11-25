@@ -1286,8 +1286,18 @@ python -m unittest discover -s tests -v</pre>
     function renderDashboard() {
       const eligible = stocks.filter(s => s.universe_status !== "EXCLUDED");
       const ttPass = eligible.filter(s => s.tt_status === "PASS");
-      const nearPivot = eligible.filter(s => s.entry_status === "NEAR PIVOT");
-      const eodConf = eligible.filter(s => s.entry_status === "EOD CONFIRMED" || s.entry_status === "ACTIONABLE");
+      const isTechEod = (s) => (
+        s.entry_status === "EOD CONFIRMED" || s.entry_status === "ACTIONABLE" ||
+        (s.tt_status === "PASS" && s.pivot_distance_pct > 0 && s.vol_ratio >= 1.40)
+      );
+      const isTechNear = (s) => (
+        !isTechEod(s) && (
+          s.entry_status === "NEAR PIVOT" ||
+          (s.tt_status === "PASS" && s.pivot_distance_pct >= -3.0 && s.pivot_distance_pct <= 0)
+        )
+      );
+      const nearPivot = eligible.filter(isTechNear);
+      const eodConf = eligible.filter(isTechEod);
       const warns = openPositions.filter(p => p.current_price <= p.stop_price).length;
 
       document.getElementById("dash-kpi-watch").textContent = watchlist.size;
@@ -1369,8 +1379,8 @@ python -m unittest discover -s tests -v</pre>
       let rows = eligible;
       if (state.listMode === "watchlist") rows = stocks.filter(s => watchlist.has(s.ticker));
       else if (state.listMode === "tt_all") rows = ttPass;
-      else if (state.listMode === "near_pivot") rows = eligible.filter(s => s.entry_status === "NEAR PIVOT");
-      else if (state.listMode === "eod_confirmed") rows = eligible.filter(s => s.entry_status === "EOD CONFIRMED" || s.entry_status === "ACTIONABLE");
+      else if (state.listMode === "near_pivot") rows = nearPivot;
+      else if (state.listMode === "eod_confirmed") rows = eodConf;
       else if (state.listMode === "top20") rows = ttPass.slice().sort((a, b) => b.system_rs_rank - a.system_rs_rank).slice(0, 20);
       else if (state.listMode === "lite") rows = ttPass.filter(s => s.entry_status === "NEAR PIVOT" || s.entry_status === "SETUP FORMING");
       else if (state.listMode === "vcp") rows = eligible.filter(s => s.pattern_status === "VCP_VALIDATED" || s.pattern_status === "VCP_REVIEW_REQUIRED");
