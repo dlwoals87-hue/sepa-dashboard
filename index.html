@@ -2071,6 +2071,17 @@ python -m unittest discover -s tests -v</pre>
       const c3Pass = calcC.length === 3 && calcC[2].depth_pct <= 12;
       const c4Pass = s.vol_dryup !== null ? s.vol_dryup : (t3VolRatio !== null && t3VolRatio <= 0.75);
 
+      const last10Slice = b60.slice(-10);
+      const pb10 = last10Slice.length >= 5 ? calcPullback(last10Slice) : { dd: null, ddHiBar: null, ddLoBar: null };
+      const tight10Dd = pb10.dd;
+      const tight10Range = last10Slice.length >= 5
+        ? `${fmtMD(last10Slice[0].time)}~${fmtMD(last10Slice[last10Slice.length - 1].time)}`
+        : "";
+      const condTightOk = (!c2Pass || !c3Pass) && (
+        (tight10Dd !== null && tight10Dd <= 12.0) ||
+        (calcC.length === 3 && calcC[2].depth_pct <= 15.0 && s.tt_status === "PASS" && s.system_rs_rank >= 80)
+      );
+
       const tSeqHtml = calcC.length === 3
         ? `T1[${calcC[0].startDate ? `${fmtMD(calcC[0].startDate)}~${fmtMD(calcC[0].endDate)}` : "1구간"}]: $${calcC[0].low}~$${calcC[0].high}(-${calcC[0].depth_pct}%) → T2[${calcC[1].startDate ? `${fmtMD(calcC[1].startDate)}~${fmtMD(calcC[1].endDate)}` : "2구간"}]: $${calcC[1].low}~$${calcC[1].high}(-${calcC[1].depth_pct}%) → T3[${calcC[2].startDate ? `${fmtMD(calcC[2].startDate)}~${fmtMD(calcC[2].endDate)}` : "3구간"}]: $${calcC[2].low}~$${calcC[2].high}(-${calcC[2].depth_pct}%)`
         : "60일 구간 데이터 부족";
@@ -2096,19 +2107,21 @@ python -m unittest discover -s tests -v</pre>
             <div class="text-[10px] text-slate-600 mt-1">* <strong>왜 25% 이상인가?</strong> 미너비니는 바닥에서 기어다니는 소외주가 아니라, 이미 기관 자금이 들어와 상승 탄력이 증명된 주도주만 매수하기 때문입니다.</div>
           </div>
 
-          <div class="bg-white p-2.5 rounded-xl border ${c2Pass ? "border-emerald-200" : "border-slate-200"}">
+          <div class="bg-white p-2.5 rounded-xl border ${c2Pass ? "border-emerald-200" : condTightOk ? "border-amber-200" : "border-slate-200"}">
             <div class="flex items-center justify-between gap-2">
-              <div><strong class="text-slate-900">2. 60일 3단계 수축 (T1 &gt; T2 ≥ T3):</strong> ${badgeHtml(c2Pass)}</div>
+              <div><strong class="text-slate-900">2. 60일 3단계 수축 (T1 &gt; T2 ≥ T3):</strong> ${c2Pass ? badgeHtml(true) : condTightOk ? `<span class="ml-1 px-1.5 py-0.5 rounded text-[10px] font-bold bg-amber-100 text-amber-800">→ 조건부 통과 검토</span>` : badgeHtml(false)}</div>
               <button type="button" onclick="openVcpDetailModal('contraction')" class="shrink-0 whitespace-nowrap px-2 py-0.5 rounded-md bg-slate-100 hover:bg-indigo-50 text-indigo-700 font-semibold text-[10px] border border-slate-200 hover:border-indigo-200 transition">상세 이유 확인</button>
             </div>
             <div class="text-[10px] text-slate-700 font-medium mt-0.5 tabular-nums">${tSeqHtml}</div>
             <div class="text-[10px] text-slate-600 mt-1">* <strong>왜 폭이 갈수록 줄어야 하나?</strong> 조정이 반복될수록 급히 팔고 나가는 약한 손(단타 물량)이 털려나가면서 주가 흔들림이 자연스럽게 작아지기 때문입니다.</div>
+            ${!c2Pass ? `<div class="mt-1.5 p-1.5 rounded-lg ${condTightOk ? "bg-amber-50/80 text-amber-950 border border-amber-200" : "bg-slate-50 text-slate-600 border border-slate-200"} text-[10px] leading-relaxed">${condTightOk ? `<strong>[미너비니 실전 판단]</strong> 20일씩 자른 구간에서는 완벽한 계단식이 아니지만, 전체적으로 10%대 얕은 횡보 박스권(플랫 베이스)을 유지했습니다. <strong>상승추세(10/10)·RS(80↑)·거래량(1.4배↑)이 맞물리면 조건부 통과로 보고 진입을 검토</strong>할 수 있습니다.` : `<strong>[실전 판단]</strong> 60일 구간 내 하락 폭이 뒤로 가면서 충분히 줄지 않아 아직 흔들림이 남아 있습니다. 1~2주 더 좁게 다져지는지 기다리세요.`}</div>` : ""}
           </div>
 
-          <div class="bg-white p-2.5 rounded-xl border ${c3Pass ? "border-emerald-200" : "border-slate-200"}">
-            <div><strong class="text-slate-900">3. 마지막 수축 폭 (기본 12% 이내):</strong> <span class="font-bold">${calcC.length === 3 ? `T3 변동폭 -${calcC[2].depth_pct}%` : "-"}</span> ${badgeHtml(c3Pass)}</div>
+          <div class="bg-white p-2.5 rounded-xl border ${c3Pass ? "border-emerald-200" : condTightOk ? "border-amber-200" : "border-slate-200"}">
+            <div><strong class="text-slate-900">3. 마지막 수축 폭 (기본 12% 이내):</strong> <span class="font-bold">${calcC.length === 3 ? `T3 변동폭 -${calcC[2].depth_pct}%` : "-"}</span> ${c3Pass ? badgeHtml(true) : condTightOk ? `<span class="ml-1 px-1.5 py-0.5 rounded text-[10px] font-bold bg-amber-100 text-amber-800">→ 조건부 통과 검토</span>` : badgeHtml(false)}</div>
             ${calcC.length === 3 && calcC[2].hiDate ? `<div class="text-[10px] text-slate-600 font-medium mt-0.5 tabular-nums">기준 고점 ${calcC[2].hiDate}($${calcC[2].high}) vs 비교 저점 ${calcC[2].loDate}($${calcC[2].low})</div>` : ""}
             <div class="text-[10px] text-slate-600 mt-1">* <strong>왜 12% 이내로 좁아야 하나?</strong> 마지막 구간 변동이 좁아야 손절선(최대 7%)을 타이트하게 잡을 수 있고, 작은 매수세에도 주가가 가볍게 튀어 오릅니다.</div>
+            ${!c3Pass && calcC.length === 3 ? `<div class="mt-1.5 p-1.5 rounded-lg ${condTightOk ? "bg-amber-50/80 text-amber-950 border border-amber-200" : "bg-slate-50 text-slate-600 border border-slate-200"} text-[10px] leading-relaxed">${condTightOk ? `<strong>[미너비니 실전 판단]</strong> 숫자가 정확히 12.0% 이하인지보다 <strong>피벗($${pivPrice.toFixed(2)}) 돌파 시 손절선(7%)을 짧게 잡고 들어갈 수 있을 만큼 직전 차트가 뭉쳐 있는지</strong>가 핵심입니다. ${tight10Dd !== null ? `최근 10일(${tight10Range}) 실제 변동폭이 <strong>-${tight10Dd}%</strong>로 좁아졌거나` : "고성장주 변동성 범위(-15% 이내)로"} <strong>다른 핵심 요건(RS·거래량)이 충족되면 조건부 통과로 판단</strong>합니다.` : `<strong>[실전 판단]</strong> T3 하락폭(-${calcC[2].depth_pct}%)${tight10Dd !== null ? ` 및 최근 10일 폭(-${tight10Dd}%)` : ""}이 커서 지금 진입하면 7% 손절선에 걸릴 위험이 높습니다. 캔들이 더 좁게 뭉칠 때까지 대기하세요.`}</div>` : ""}
           </div>
 
           <div class="bg-white p-2.5 rounded-xl border ${c4Pass ? "border-emerald-200" : "border-slate-200"}">
