@@ -212,6 +212,11 @@
             </div>
           </div>
 
+          <div class="flex gap-2">
+            <button id="btn-goto-setup" class="flex-1 px-3 py-2 rounded-xl text-xs font-semibold bg-slate-100 hover:bg-slate-200 text-slate-800 border border-slate-200 transition">차트/패턴 상세</button>
+            <button id="btn-goto-plan" class="flex-1 px-3 py-2 rounded-xl text-xs font-semibold bg-slate-900 hover:bg-slate-800 text-white transition">손절/수량 계산 →</button>
+          </div>
+
           <div class="p-3.5 rounded-xl bg-blue-50/60 border border-blue-200 text-xs space-y-2">
             <div class="font-bold text-slate-900 flex items-center gap-1.5"><i data-lucide="compass" class="w-3.5 h-3.5 text-blue-600"></i> 초보자용 해석 &amp; 행동 가이드</div>
             <p id="q-diagnosis" class="text-slate-700 leading-relaxed">-</p>
@@ -226,10 +231,7 @@
             <div id="q-tt-grid" class="grid grid-cols-2 gap-1.5 text-[11px]"></div>
           </div>
 
-          <div class="flex gap-2 pt-2 border-t border-slate-100">
-            <button id="btn-goto-setup" class="flex-1 px-3 py-2 rounded-xl text-xs font-semibold bg-slate-100 hover:bg-slate-200 text-slate-800">차트/패턴 상세</button>
-            <button id="btn-goto-plan" class="flex-1 px-3 py-2 rounded-xl text-xs font-semibold bg-slate-900 hover:bg-slate-800 text-white">손절/수량 계산 →</button>
-          </div>
+
         </div>
       </div>
     </section>
@@ -1492,7 +1494,7 @@ python -m unittest discover -s tests -v</pre>
       document.getElementById("q-entry-badge").textContent = entLabel;
 
       let diag = s.tt_status === "PASS"
-        ? `상승추세 10조건을 모두 통과했습니다. EPS 추세는 '${s.eps_trend}' 상태이며, 현재 차트 모양(${patLabel})과 거래량(${s.vol_ratio}배) 기준으로 '${entLabel}' 단계입니다.`
+        ? `상승추세 10조건을 모두 통과했습니다. EPS 추세는 '${s.eps_trend}' 상태이며, 현재 차트 모양(${patLabel})과 거래량(${s.vol_ratio}배) 기준으로 '${entLabel}' 단계입니다.${s.entry_status === "BLOCKED BY MARKET" ? `<div class="mt-1.5 pt-1.5 border-t border-blue-200/80 text-[11px] text-slate-700"><strong>※ 미너비니·오닐의 약세장 예외 접근법:</strong> 지수가 약세라 원칙상 현금 보유 구간이지만, <strong>① 시장보다 먼저 신고가를 뚫는 RS 90+ 주도주 + ② 완벽한 VCP 수축 + ③ 거래량 1.40배↑ 돌파 + ④ 실적 가속</strong>이 모두 겹치면 전체 자산의 <strong>1/4 이하 소액(시범 매수)</strong>으로 시장 반응을 테스트하기도 합니다. (단, 7% 손절 엄수 · 연속 손절 시 즉시 현금 100% 복귀)</div>` : ""}`
         : `상승추세 10조건 미충족(${s.fail_reasons.join(", ")}). 추세 조건 복구 전까지 신규 진입을 보류하세요. (50/80 룰: 고점 이탈 종목은 -50%~-80% 하락 위험이 크므로 바닥 매수 금지)`;
       if (s.eps_trend.includes("둔화")) diag += " (주의: 최근 EPS 성장률 둔화 징후가 있어 실적 지속성 점검이 필요합니다.)";
       const pd = calcSepaPriorityDetail(s);
@@ -2033,7 +2035,9 @@ python -m unittest discover -s tests -v</pre>
         const hudVsmaLbl = document.getElementById("hud-vsma-lbl");
         if (hudVsmaLbl) hudVsmaLbl.textContent = state.setupTf === "D" ? "거래량50일평균" : state.setupTf === "W" ? "거래량10주평균" : "거래량6개월평균";
         const addVolumeWithSma = () => {
-          addVolumeWithSma();
+          const volSeries = tvChartInst.addHistogramSeries({ color: "#94a3b8", priceFormat: { type: "volume" }, priceScaleId: "", lastValueVisible: false, priceLineVisible: false });
+          volSeries.priceScale().applyOptions({ scaleMargins: { top: 0.8, bottom: 0 } });
+          volSeries.setData(activeCandles.map(c => ({ time: c.time, value: c.volume, color: c.close >= c.open ? "rgba(239,68,68,0.35)" : "rgba(37,99,235,0.35)" })));
           if (smaBaseCandles.length >= volSmaPeriod) {
             const vLine = tvChartInst.addLineSeries({ color: "#f97316", lineWidth: 1.5, priceScaleId: "", priceFormat: { type: "volume" }, priceLineVisible: false, lastValueVisible: false });
             vLine.priceScale().applyOptions({ scaleMargins: { top: 0.8, bottom: 0 } });
@@ -2220,9 +2224,11 @@ python -m unittest discover -s tests -v</pre>
             spy_prices: d.spy_prices ? d.spy_prices.slice(-cut) : []
           };
         };
+        const fetchStaticHist = () => fetch(`data/history/t_${encodeURIComponent(reqTicker)}.json`)
+          .then(r2 => r2.ok ? r2.json() : fetch(`data/history/${encodeURIComponent(reqTicker)}.json`).then(r3 => r3.ok ? r3.json() : null));
         fetch(`api/history?ticker=${encodeURIComponent(reqTicker)}&period=${reqPeriod}`)
-          .then(r => r.ok ? r.json() : fetch(`data/history/t_${encodeURIComponent(reqTicker)}.json`).then(r2 => r2.ok ? r2.json() : null))
-          .catch(() => fetch(`data/history/t_${encodeURIComponent(reqTicker)}.json`).then(r2 => r2.ok ? r2.json() : null))
+          .then(r => r.ok ? r.json() : fetchStaticHist())
+          .catch(() => fetchStaticHist())
           .then(d => {
             if (d && Array.isArray(d.candles) && d.candles.length) {
               s.longCache = s.longCache || {};
@@ -2238,9 +2244,11 @@ python -m unittest discover -s tests -v</pre>
 
       if (!s.finData && (window.location.protocol.startsWith("http"))) {
         const reqFinTicker = s.ticker;
+        const fetchStaticFin = () => fetch(`data/financials/t_${encodeURIComponent(reqFinTicker)}.json`)
+          .then(r => r.ok ? r.json() : fetch(`data/financials/${encodeURIComponent(reqFinTicker)}.json`).then(r2 => r2.ok ? r2.json() : null));
         fetch(`api/financials?ticker=${encodeURIComponent(reqFinTicker)}`)
           .then(r => r.ok ? r.json() : Promise.reject())
-          .catch(() => fetch(`data/financials/t_${encodeURIComponent(reqFinTicker)}.json`).then(r => r.ok ? r.json() : null))
+          .catch(() => fetchStaticFin())
           .then(fd => {
             if (fd && (fd.annual || fd.quarterly)) {
               s.finData = fd;
