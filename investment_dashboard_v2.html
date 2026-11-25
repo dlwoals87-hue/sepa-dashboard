@@ -1818,6 +1818,65 @@ python -m unittest discover -s tests -v</pre>
       document.getElementById("scr-count").textContent = `${rows.length}개 종목`;
     }
 
+    function buildDemoCandles(prices, dates) {
+      const arr = Array.isArray(prices) && prices.length ? prices : [100];
+      const out = [];
+      const hasDates = Array.isArray(dates) && dates.length === arr.length;
+      const baseDt = new Date("2026-11-24T00:00:00Z");
+      const genDates = [];
+      if (!hasDates) {
+        let cur = new Date(baseDt);
+        while (genDates.length < arr.length) {
+          const day = cur.getUTCDay();
+          if (day !== 0 && day !== 6) genDates.unshift(cur.toISOString().slice(0, 10));
+          cur.setUTCDate(cur.getUTCDate() - 1);
+        }
+      }
+      for (let i = 0; i < arr.length; i++) {
+        const c = Number(arr[i] || 100);
+        const o = i > 0 ? Number(arr[i - 1] || c) : c;
+        const hi = +Math.max(o, c, c * 1.008).toFixed(2);
+        const lo = +Math.min(o, c, c * 0.992).toFixed(2);
+        out.push({
+          time: hasDates ? dates[i] : genDates[i],
+          open: +o.toFixed(2),
+          high: hi,
+          low: lo,
+          close: +c.toFixed(2),
+          volume: 1000000
+        });
+      }
+      return out;
+    }
+
+    function resampleCandles(dailyCandles, tf) {
+      if (!Array.isArray(dailyCandles) || !dailyCandles.length || tf === "D") return dailyCandles || [];
+      const buckets = new Map();
+      for (const bar of dailyCandles) {
+        if (!bar || !bar.time) continue;
+        let key = bar.time;
+        if (tf === "W") {
+          const d = new Date(bar.time + "T00:00:00Z");
+          const day = d.getUTCDay() || 7;
+          d.setUTCDate(d.getUTCDate() - (day - 1));
+          key = d.toISOString().slice(0, 10);
+        } else if (tf === "M") {
+          key = bar.time.slice(0, 7);
+        }
+        if (!buckets.has(key)) {
+          buckets.set(key, { ...bar });
+        } else {
+          const b = buckets.get(key);
+          b.high = Math.max(b.high, bar.high);
+          b.low = Math.min(b.low, bar.low);
+          b.close = bar.close;
+          b.time = bar.time;
+          b.volume = (b.volume || 0) + (bar.volume || 0);
+        }
+      }
+      return Array.from(buckets.values());
+    }
+
     function renderSetupsTab() {
       const selEl = document.getElementById("setup-ticker-select");
       selEl.innerHTML = stocks.map(s => `<option value="${s.ticker}" ${s.ticker === state.selectedTicker ? "selected" : ""}>${s.ticker} - ${s.name}</option>`).join("");
