@@ -2219,8 +2219,8 @@ python -m unittest discover -s tests -v</pre>
           };
         };
         fetch(`api/history?ticker=${encodeURIComponent(reqTicker)}&period=${reqPeriod}`)
-          .then(r => r.ok ? r.json() : fetch(`data/history/${encodeURIComponent(reqTicker)}.json`).then(r2 => r2.ok ? r2.json() : null))
-          .catch(() => fetch(`data/history/${encodeURIComponent(reqTicker)}.json`).then(r2 => r2.ok ? r2.json() : null))
+          .then(r => r.ok ? r.json() : fetch(`data/history/t_${encodeURIComponent(reqTicker)}.json`).then(r2 => r2.ok ? r2.json() : null))
+          .catch(() => fetch(`data/history/t_${encodeURIComponent(reqTicker)}.json`).then(r2 => r2.ok ? r2.json() : null))
           .then(d => {
             if (d && Array.isArray(d.candles) && d.candles.length) {
               s.longCache = s.longCache || {};
@@ -2238,7 +2238,7 @@ python -m unittest discover -s tests -v</pre>
         const reqFinTicker = s.ticker;
         fetch(`api/financials?ticker=${encodeURIComponent(reqFinTicker)}`)
           .then(r => r.ok ? r.json() : Promise.reject())
-          .catch(() => fetch(`data/financials/${encodeURIComponent(reqFinTicker)}.json`).then(r => r.ok ? r.json() : null))
+          .catch(() => fetch(`data/financials/t_${encodeURIComponent(reqFinTicker)}.json`).then(r => r.ok ? r.json() : null))
           .then(fd => {
             if (fd && (fd.annual || fd.quarterly)) {
               s.finData = fd;

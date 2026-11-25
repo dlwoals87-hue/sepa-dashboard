@@ -594,6 +594,14 @@ def run_sepa_pipeline(finviz_filters: Dict[str, str] = None, max_universe: int =
     # Export static 10Y history & financials JSONs for GitHub Pages (works without .bat!)
     os.makedirs("data/history", exist_ok=True)
     os.makedirs("data/financials", exist_ok=True)
+    # Remove any legacy non-prefixed files (e.g., Windows-reserved CON.json)
+    for _d in ("data/history", "data/financials"):
+        for _fn in os.listdir(_d):
+            if _fn.endswith(".json") and not _fn.startswith("t_"):
+                try:
+                    os.remove(os.path.join(_d, _fn))
+                except Exception:
+                    pass
     gh_targets = list(dict.fromkeys([x["ticker"] for x in analyzed_stocks if x.get("tt_status") == "PASS" or x.get("in_ndx100")]))
     if gh_targets:
         print(f"      GitHub Pages용 정적 10년 차트/실적 파일 생성 중 ({len(gh_targets)}개 주요 종목)...")
@@ -620,7 +628,7 @@ def run_sepa_pipeline(finviz_filters: Dict[str, str] = None, max_universe: int =
                         for dt, (_, r) in zip(dts, hdf.iterrows())
                     ]
                     sp_list = [spy_map_10y.get(dt) for dt in dts]
-                    with open(f"data/history/{sym}.json", "w", encoding="utf-8") as hf:
+                    with open(f"data/history/t_{sym}.json", "w", encoding="utf-8") as hf:
                         json.dump({"ticker": sym, "dates": dts, "prices": [c["close"] for c in candles], "candles": candles, "spy_prices": sp_list}, hf, separators=(",", ":"))
             except Exception:
                 pass
@@ -637,7 +645,7 @@ def run_sepa_pipeline(finviz_filters: Dict[str, str] = None, max_universe: int =
                     prof.setdefault("industry", st_info.get("industry", ""))
                     prof.setdefault("market_cap_b", st_info.get("market_cap_b"))
                     fin_payload["profile"] = prof
-                    with open(f"data/financials/{sym}.json", "w", encoding="utf-8") as ff:
+                    with open(f"data/financials/t_{sym}.json", "w", encoding="utf-8") as ff:
                         json.dump(fin_payload, ff, separators=(",", ":"))
 
     export_csv(analyzed_stocks, "sepa_candidates.csv")
