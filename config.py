@@ -9,7 +9,7 @@ class UniverseConfig:
     min_price_actionable: float = 15.0
     min_price_watch: float = 10.0
     min_avg_dollar_vol_50d: float = 10_000_000.0  # $10M/day
-    exclude_healthcare: bool = True
+    exclude_healthcare: bool = False
     exclude_spac: bool = True
     exclude_negative_eps: bool = True
     allowed_exchanges: List[str] = field(default_factory=lambda: ["NYSE", "NASDAQ", "AMEX"])

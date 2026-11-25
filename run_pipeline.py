@@ -427,9 +427,30 @@ def run_sepa_pipeline(finviz_filters: Dict[str, str] = None, max_universe: int =
             else:
                 a_eps_yoy.append(None)
 
+        sec_prof = {}
+        try:
+            sub_url = f"https://data.sec.gov/submissions/CIK{cik_str}.json"
+            sub_req = urllib.request.Request(
+                sub_url,
+                headers={"User-Agent": "QuantResearchApp/2.0 (contact@quant-local.org)", "Accept-Encoding": "gzip, deflate"},
+            )
+            with urllib.request.urlopen(sub_req, timeout=8) as sresp:
+                sraw = sresp.read()
+                if sresp.headers.get("Content-Encoding") == "gzip":
+                    sraw = gzip.decompress(sraw)
+                sdata = json.loads(sraw.decode("utf-8"))
+                sec_prof = {
+                    "sic_desc": sdata.get("sicDescription", ""),
+                    "website": sdata.get("website", ""),
+                    "state": sdata.get("stateOfIncorporation", ""),
+                    "category": sdata.get("category", ""),
+                }
+        except Exception:
+            pass
         fin_payload = {
             "ticker": "",
             "source": "SEC EDGAR XBRL",
+            "profile": sec_prof,
             "annual": {"labels": a_labels, "revenueB": a_rev_b, "netIncomeB": a_net_b, "eps": a_eps_vals, "epsYoY": a_eps_yoy},
             "quarterly": {"labels": q_labels, "revenueB": q_rev_b, "netIncomeB": q_net_b, "eps": q_eps_vals, "epsYoY": q_eps_yoy},
         }
@@ -603,11 +624,19 @@ def run_sepa_pipeline(finviz_filters: Dict[str, str] = None, max_universe: int =
                         json.dump({"ticker": sym, "dates": dts, "prices": [c["close"] for c in candles], "candles": candles, "spy_prices": sp_list}, hf, separators=(",", ":"))
             except Exception:
                 pass
-        # Also save financials JSON from fund_cache where available (annual + quarterly for dashboard)
+        # Also save financials JSON + company profile from fund_cache where available
+        analyzed_by_sym = {x["ticker"]: x for x in analyzed_stocks}
         for sym in gh_targets:
             if sym in fund_cache:
                 _, qe, qs, _, fin_payload = fund_cache[sym]
                 if fin_payload and (fin_payload.get("quarterly", {}).get("labels") or fin_payload.get("annual", {}).get("labels")):
+                    st_info = analyzed_by_sym.get(sym, {})
+                    prof = fin_payload.get("profile") or {}
+                    prof.setdefault("name", st_info.get("name", sym))
+                    prof.setdefault("sector", st_info.get("sector", ""))
+                    prof.setdefault("industry", st_info.get("industry", ""))
+                    prof.setdefault("market_cap_b", st_info.get("market_cap_b"))
+                    fin_payload["profile"] = prof
                     with open(f"data/financials/{sym}.json", "w", encoding="utf-8") as ff:
                         json.dump(fin_payload, ff, separators=(",", ":"))
 

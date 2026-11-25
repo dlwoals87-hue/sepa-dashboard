@@ -1,5 +1,6 @@
 """Stage 0: Investment Universe Filtering with Explicit Exclusion Reasons."""
 
+import re
 from typing import Dict, List, Tuple
 from config import UniverseConfig
 
@@ -22,7 +23,7 @@ def classify_universe_candidate(record: Dict, cfg: UniverseConfig) -> Tuple[str,
 
     sec_type = str(record.get("security_type", "COMMON")).upper()
     name_upper = str(record.get("name", "")).upper()
-    if sec_type != "COMMON" or any(kw in name_upper for kw in NON_COMMON_KEYWORDS):
+    if sec_type != "COMMON" or any(re.search(rf"\b{kw}\b", name_upper) for kw in NON_COMMON_KEYWORDS):
         return "EXCLUDED", "NON_COMMON_STOCK"
 
     if cfg.exclude_spac and record.get("is_spac", False):
