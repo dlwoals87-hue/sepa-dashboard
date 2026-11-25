@@ -574,6 +574,9 @@
               <tbody id="fin-detail-tbody" class="divide-y divide-slate-100 tabular-nums"></tbody>
             </table>
           </div>
+        <div id="fin-minervini-comment" class="mt-3 p-3 rounded-xl bg-slate-50 border border-slate-200 text-[11px] text-slate-700 leading-relaxed">
+          EPS 전년동기대비(YoY) 추세를 분석 중입니다...
+        </div>
         </div>
       </div>
     </section>
@@ -1835,6 +1838,32 @@ python -m unittest discover -s tests -v</pre>
           </tr>
         `;
       }).join("");
+
+      const finComEl = document.getElementById("fin-minervini-comment");
+      if (finComEl) {
+        const yVals = (fin.epsYoY || []).map((v, idx) => ({ lbl: fin.labels[idx], v })).filter(x => x.v !== null && x.v !== undefined);
+        if (yVals.length >= 2) {
+          const last = yVals[yVals.length - 1], prev = yVals[yVals.length - 2];
+          const recentStr = yVals.slice(-3).map(x => `${x.lbl}(${x.v > 0 ? "+" : ""}${x.v}%)`).join(" → ");
+          const accel = last.v > prev.v && last.v >= 20;
+          const strong = last.v >= 25;
+          let verdict = "";
+          if (accel) {
+            verdict = `<strong class="text-emerald-700">최상급 (이익 성장 가속):</strong> 최근 EPS 증가율이 직전(${prev.v > 0 ? "+" : ""}${prev.v}%)보다 더 높아진 <strong>+${last.v}%</strong>입니다. 미너비니와 오닐이 가장 좋아하는 '실적 가속' 패턴입니다.`;
+          } else if (strong) {
+            verdict = `<strong class="text-emerald-700">양호 (고성장 유지):</strong> 최근 EPS 증가율이 <strong>+${last.v}%</strong>로 오닐의 최소 기준(+25%↑)을 충족합니다. 매출도 함께 늘고 있다면 기관 수급 유입 조건에 부합합니다.`;
+          } else if (last.v > 0 && last.v < prev.v) {
+            verdict = `<strong class="text-amber-700">성장 속도 둔화 (점검 필요):</strong> 직전(${prev.v > 0 ? "+" : ""}${prev.v}%) 대비 최근 증가율이 <strong>+${last.v}%</strong>로 낮아졌습니다. 매출이 꾸준히 늘고 있더라도, 이익 성장률이 다시 20~25%↑로 재가속하는지 다음 분기 가이던스를 확인하세요.`;
+          } else if (last.v <= 0) {
+            verdict = `<strong class="text-rose-700">주의 (역성장):</strong> 최근 EPS 증가율이 <strong>${last.v}%</strong>로 전년 동기 대비 줄었습니다. 일시적 비용 때문인지 본업 훼손인지 확인 전까지는 보수적으로 접근하세요.`;
+          } else {
+            verdict = `<strong class="text-slate-800">완만한 성장:</strong> 최근 EPS 증가율이 <strong>+${last.v}%</strong>입니다. 오닐 기준(+25%↑)에는 다소 못 미치므로, 매출 가속이나 신제품 촉매가 있는지 함께 살펴보세요.`;
+          }
+          finComEl.innerHTML = `<div class="font-bold text-slate-900 mb-0.5">미너비니 · 오닐 실적(EPS YoY) 판독 <span class="font-normal text-slate-500">(${recentStr})</span></div><div>${verdict}</div>`;
+        } else {
+          finComEl.innerHTML = `<div class="font-bold text-slate-900 mb-0.5">미너비니 · 오닐 실적(EPS YoY) 판독</div><div>비교 가능한 전년 동기 대비(YoY) 분기 데이터가 부족합니다. 최소 5개 분기 이상 실적이 쌓이면 가속/둔화 여부를 자동 판독합니다.</div>`;
+        }
+      }
     }
 
     function resampleCandles(candles, tf) {
@@ -1887,35 +1916,55 @@ python -m unittest discover -s tests -v</pre>
         "SETUP FORMING": "차트 다지는 중", "EXTENDED / NO CHASE": "급등이격 (추격금지)",
         "FAILED BREAKOUT": "돌파실패", "WATCH": "지켜보기", "DATA UNAVAILABLE": "데이터없음"
       };
+      const fmtMD = (t) => t ? t.slice(5).replace("-", "/") : "-";
       const b60 = rawDailyCandles.slice(-60);
       const wSlices = b60.length >= 60 ? [b60.slice(0, 20), b60.slice(20, 40), b60.slice(40, 60)] : [];
       const calcC = wSlices.length === 3 ? wSlices.map((w, idx) => {
-        const hi = Math.max(...w.map(x => x.high)), lo = Math.min(...w.map(x => x.low));
-        const d = hi > 0 ? +(((hi - lo) / hi) * 100).toFixed(1) : 0;
+        let hiBar = w[0], loBar = w[0];
+        w.forEach(x => { if (x.high > hiBar.high) hiBar = x; if (x.low < loBar.low) loBar = x; });
+        const d = hiBar.high > 0 ? +(((hiBar.high - loBar.low) / hiBar.high) * 100).toFixed(1) : 0;
         const av = w.reduce((a, b) => a + (b.volume || 0), 0) / w.length;
-        return { stage: `T${idx + 1}`, high: hi.toFixed(2), low: lo.toFixed(2), depth_pct: d, avg_vol: av };
+        return {
+          stage: `T${idx + 1}`, high: hiBar.high.toFixed(2), low: loBar.low.toFixed(2),
+          hiDate: hiBar.time, loDate: loBar.time, startDate: w[0].time, endDate: w[w.length - 1].time,
+          depth_pct: d, avg_vol: av
+        };
       }) : (s.contractions || []);
 
-      const avgV50 = rawDailyCandles.length >= 50 ? rawDailyCandles.slice(-50).reduce((a, b) => a + (b.volume || 0), 0) / 50 : 0;
+      const v50Slice = rawDailyCandles.slice(-50);
+      const avgV50 = rawDailyCandles.length >= 50 ? v50Slice.reduce((a, b) => a + (b.volume || 0), 0) / 50 : 0;
       const t3VolRatio = (calcC.length === 3 && avgV50 > 0) ? +(calcC[2].avg_vol / avgV50).toFixed(2) : null;
 
-      let priorUp = s.prior_uptrend_pct;
-      if ((priorUp === null || priorUp === undefined) && rawDailyCandles.length >= 120) {
-        const baseHi = Math.max(...rawDailyCandles.slice(-90).map(x => x.high));
-        const priorLo = Math.min(...rawDailyCandles.slice(-210, -90).map(x => x.low));
-        priorUp = priorLo > 0 ? +(((baseHi - priorLo) / priorLo) * 100).toFixed(1) : null;
+      // Find exact reference low & comparison high for Prior Uptrend (base_90 high vs prior_120 low)
+      let priorLoBar = null, baseHiBar = null;
+      if (rawDailyCandles.length >= 120) {
+        const r90 = rawDailyCandles.slice(-90);
+        const p120 = rawDailyCandles.slice(-210, -90);
+        if (p120.length && r90.length) {
+          priorLoBar = p120.reduce((m, x) => x.low < m.low ? x : m, p120[0]);
+          baseHiBar = r90.reduce((m, x) => x.high > m.high ? x : m, r90[0]);
+        }
       }
+      let priorUp = s.prior_uptrend_pct;
+      if ((priorUp === null || priorUp === undefined) && priorLoBar && baseHiBar && priorLoBar.low > 0) {
+        priorUp = +(((baseHiBar.high - priorLoBar.low) / priorLoBar.low) * 100).toFixed(1);
+      }
+      const c1RefHtml = (priorLoBar && baseHiBar)
+        ? `<div class="text-[10px] text-slate-600 font-medium mt-0.5 tabular-nums">기준 저점 ${priorLoBar.time}($${priorLoBar.low.toFixed(2)}) → 비교 고점 ${baseHiBar.time}($${baseHiBar.high.toFixed(2)})</div>`
+        : "";
+
       const c1Pass = priorUp !== null && priorUp >= 25;
       const c2Pass = calcC.length === 3 && calcC[0].depth_pct > calcC[1].depth_pct && calcC[1].depth_pct >= calcC[2].depth_pct;
       const c3Pass = calcC.length === 3 && calcC[2].depth_pct <= 12;
       const c4Pass = s.vol_dryup !== null ? s.vol_dryup : (t3VolRatio !== null && t3VolRatio <= 0.75);
 
       const tSeqHtml = calcC.length === 3
-        ? `T1($${calcC[0].low}~$${calcC[0].high}, -${calcC[0].depth_pct}%) → T2($${calcC[1].low}~$${calcC[1].high}, -${calcC[1].depth_pct}%) → T3($${calcC[2].low}~$${calcC[2].high}, -${calcC[2].depth_pct}%)`
+        ? `T1[${calcC[0].startDate ? `${fmtMD(calcC[0].startDate)}~${fmtMD(calcC[0].endDate)}` : "1구간"}]: $${calcC[0].low}~$${calcC[0].high}(-${calcC[0].depth_pct}%) → T2[${calcC[1].startDate ? `${fmtMD(calcC[1].startDate)}~${fmtMD(calcC[1].endDate)}` : "2구간"}]: $${calcC[1].low}~$${calcC[1].high}(-${calcC[1].depth_pct}%) → T3[${calcC[2].startDate ? `${fmtMD(calcC[2].startDate)}~${fmtMD(calcC[2].endDate)}` : "3구간"}]: $${calcC[2].low}~$${calcC[2].high}(-${calcC[2].depth_pct}%)`
         : "60일 구간 데이터 부족";
 
       const pivPrice = Number(s.pivot || s.price || 0);
-      const lastBar = rawDailyCandles[rawDailyCandles.length - 1] || { close: s.price, high: s.price, volume: 0 };
+      const pivBar = b60.length ? b60.reduce((m, x) => x.high > m.high ? x : m, b60[0]) : null;
+      const lastBar = rawDailyCandles[rawDailyCandles.length - 1] || { time: "-", close: s.price, high: s.price, volume: 0 };
       const c5Pass = pivPrice > 0 && calcC.length === 3;
       const curVolRatio = avgV50 > 0 ? +(lastBar.volume / avgV50).toFixed(2) : Number(s.vol_ratio || 0);
       const c6Pass = (lastBar.close > pivPrice) && curVolRatio >= 1.40;
@@ -1930,6 +1979,7 @@ python -m unittest discover -s tests -v</pre>
         <div class="grid grid-cols-1 md:grid-cols-2 gap-2.5 mt-3 text-[11px] leading-relaxed">
           <div class="bg-white p-2.5 rounded-xl border ${c1Pass ? "border-emerald-200" : "border-slate-200"}">
             <div><strong class="text-slate-900">1. 선행 상승추세 (기본 +25% 이상 상승):</strong> <span class="font-bold">${priorUp !== null && priorUp !== undefined ? `+${priorUp}%` : "데이터 부족"}</span> ${badgeHtml(c1Pass)}</div>
+            ${c1RefHtml}
             <div class="text-[10px] text-slate-600 mt-1">* <strong>왜 25% 이상인가?</strong> 미너비니는 바닥에서 기어다니는 소외주가 아니라, 이미 기관 자금이 들어와 상승 탄력이 증명된 주도주만 매수하기 때문입니다.</div>
           </div>
 
@@ -1944,16 +1994,19 @@ python -m unittest discover -s tests -v</pre>
 
           <div class="bg-white p-2.5 rounded-xl border ${c3Pass ? "border-emerald-200" : "border-slate-200"}">
             <div><strong class="text-slate-900">3. 마지막 수축 폭 (기본 12% 이내):</strong> <span class="font-bold">${calcC.length === 3 ? `T3 변동폭 -${calcC[2].depth_pct}%` : "-"}</span> ${badgeHtml(c3Pass)}</div>
+            ${calcC.length === 3 && calcC[2].hiDate ? `<div class="text-[10px] text-slate-600 font-medium mt-0.5 tabular-nums">기준 고점 ${calcC[2].hiDate}($${calcC[2].high}) vs 비교 저점 ${calcC[2].loDate}($${calcC[2].low})</div>` : ""}
             <div class="text-[10px] text-slate-600 mt-1">* <strong>왜 12% 이내로 좁아야 하나?</strong> 마지막 구간 변동이 좁아야 손절선(최대 7%)을 타이트하게 잡을 수 있고, 작은 매수세에도 주가가 가볍게 튀어 오릅니다.</div>
           </div>
 
           <div class="bg-white p-2.5 rounded-xl border ${c4Pass ? "border-emerald-200" : "border-slate-200"}">
             <div><strong class="text-slate-900">4. 수축 구간 거래량 건조 (50일 평균 0.75배↓):</strong> <span class="font-bold">${t3VolRatio !== null ? `T3 평균 ${t3VolRatio}배` : "-"}</span> ${badgeHtml(c4Pass)}</div>
+            ${calcC.length === 3 && avgV50 > 0 ? `<div class="text-[10px] text-slate-600 font-medium mt-0.5 tabular-nums">50일 평균 ${Math.round(avgV50).toLocaleString()}주 vs T3(${calcC[2].startDate ? `${fmtMD(calcC[2].startDate)}~${fmtMD(calcC[2].endDate)}` : "최근20일"}) 평균 ${Math.round(calcC[2].avg_vol).toLocaleString()}주</div>` : ""}
             <div class="text-[10px] text-slate-600 mt-1">* <strong>왜 거래량이 말라야 하나?</strong> 주가가 좁게 움직이는데 거래량까지 바짝 말랐다면, 시장에 더 이상 팔 사람이 없는 '매물 진공 상태'라는 증거입니다.</div>
           </div>
 
           <div class="bg-white p-2.5 rounded-xl border ${c5Pass ? "border-emerald-200" : "border-slate-200"}">
             <div><strong class="text-slate-900">5. 사전 형성된 피벗 저항선 (60일 최고가):</strong> <span class="font-bold">$${pivPrice.toFixed(2)} (현재가 ${s.pivot_distance_pct > 0 ? "+" : ""}${s.pivot_distance_pct}%)</span> ${badgeHtml(c5Pass)}</div>
+            ${pivBar ? `<div class="text-[10px] text-slate-600 font-medium mt-0.5 tabular-nums">저항 기준일 ${pivBar.time}($${pivBar.high.toFixed(2)}) vs 현재 ${lastBar.time}($${Number(lastBar.close).toFixed(2)})</div>` : ""}
             <div class="text-[10px] text-slate-600 mt-1">* <strong>왜 피벗 저항선이 필요한가?</strong> 매물이 대기하던 명확한 천장(저항선)이 있어야, 그 가격을 뚫는 순간을 정확한 매수 방아쇠(Trigger)로 삼을 수 있습니다.</div>
           </div>
 
@@ -1962,6 +2015,7 @@ python -m unittest discover -s tests -v</pre>
               <div><strong class="text-slate-900">6. 피벗 돌파 + 거래량 급증 (종가 돌파 &amp; 1.40배↑):</strong> <span class="font-bold">${curVolRatio}배</span> ${badgeHtml(c6Pass, "돌파 충족", "돌파 대기/미달")}</div>
               <button type="button" onclick="openVcpDetailModal('breakout')" class="shrink-0 whitespace-nowrap px-2 py-0.5 rounded-md bg-slate-100 hover:bg-indigo-50 text-indigo-700 font-semibold text-[10px] border border-slate-200 hover:border-indigo-200 transition">추가 확인 내용</button>
             </div>
+            ${avgV50 > 0 ? `<div class="text-[10px] text-slate-600 font-medium mt-0.5 tabular-nums">기준일 ${lastBar.time}: 종가 $${Number(lastBar.close).toFixed(2)}(vs $${pivPrice.toFixed(2)}) · 당일 ${Number(lastBar.volume || 0).toLocaleString()}주 vs 50일평균 ${Math.round(avgV50).toLocaleString()}주</div>` : ""}
             <div class="text-[10px] text-slate-600 mt-1">* <strong>왜 돌파 시 거래량이 터져야 하나?</strong> 거래량 없는 상승은 개인들의 속임수 반등일 수 있습니다. 1.40배 이상의 거래량이 실려야 기관의 진짜 매집 돌파로 인정합니다.</div>
           </div>
         </div>
@@ -2230,6 +2284,9 @@ python -m unittest discover -s tests -v</pre>
           .then(r => r.ok ? r.json() : fetchStaticHist())
           .catch(() => fetchStaticHist())
           .then(d => {
+            if (!d && reqPeriod !== "1y" && window.location.hostname !== "127.0.0.1" && window.location.hostname !== "localhost") {
+              showToast("해당 종목은 1년 기본 차트만 제공됩니다 (상승추세 합격·Nasdaq 100은 10년 일봉 제공)");
+            }
             if (d && Array.isArray(d.candles) && d.candles.length) {
               s.longCache = s.longCache || {};
               s.longCache._full = d;
@@ -2490,9 +2547,7 @@ python -m unittest discover -s tests -v</pre>
         });
         const s = stocks.find(x => x.ticker === state.selectedTicker) || stocks[0];
         if (!s) return;
-        if (window.location.hostname !== "127.0.0.1" && window.location.hostname !== "localhost" && period !== "1y") {
-          showToast("해당 종목은 1년 기본 차트만 제공됩니다 (상승추세 합격·Nasdaq 100은 10년 일봉 제공)");
-        }
+
         renderSetupsTab();
       });
     });
@@ -3073,8 +3128,9 @@ python -m unittest discover -s tests -v</pre>
         // Market cap ranking across all analyzed stocks with market_cap_b
         const capRanked = stocks.filter(x => x.market_cap_b != null && x.market_cap_b > 0).sort((a, b) => b.market_cap_b - a.market_cap_b);
         const capIdx = capRanked.findIndex(x => x.ticker === s.ticker);
+        const totAllU = universeStats.total_scanned || 6330;
         const capRankStr = (capIdx !== -1 && capRanked.length > 0)
-          ? `전체 ${capRanked.length.toLocaleString()}개 중 ${ (capIdx + 1).toLocaleString() }위 (상위 ${Math.max(0.1, ((capIdx + 1) / capRanked.length * 100)).toFixed(1)}%)`
+          ? `실질 투자 가능 기업 ${capRanked.length.toLocaleString()}개 중 ${(capIdx + 1).toLocaleString()}위 (상위 ${Math.max(0.1, ((capIdx + 1) / capRanked.length * 100)).toFixed(1)}%) · 전체 상장사 약 ${totAllU.toLocaleString()}개 대비 실질 상위권`
           : "순위 정보 없음";
         const capTxt = s.market_cap_b ? `$${Number(s.market_cap_b).toFixed(1)}B` : "미수집";
         const idxTags = [s.in_sp500 ? "S&P 500" : "", s.in_ndx100 ? "Nasdaq 100" : ""].filter(Boolean).join(" · ") || "미국 상장 일반주";
@@ -3199,7 +3255,8 @@ python -m unittest discover -s tests -v</pre>
               </div>
             </div>
             <div class="p-3 rounded-xl bg-indigo-50/70 border border-indigo-200 text-xs text-indigo-950 leading-relaxed">
-              <div class="font-bold mb-0.5">투자자 시사점 (시총 규모 &amp; 수익성 관점)</div>
+              <div class="font-bold mb-0.5">투자자 시사점 (왜 전체 ~6,330개가 아닌 '투자 가능 기업' 기준 순위가 더 정확한가요?)</div>
+              <p class="mb-1.5 text-[11px]">전체 상장사 ~6,330개에는 시총 순위 비교가 무의미한 <strong>ETF·스팩(SPAC)·$10 미만 동전주·적자주</strong>가 약 4,200개 섞여 있습니다. 실제 기관이 투자하는 정상 기업(${capRanked.length.toLocaleString()}개) 안에서 몇 위인지 봐야 이 회사가 진짜 대형주인지 중형 성장주인지 정확히 가늠할 수 있습니다.</p>
               <p>${s.market_cap_b && s.market_cap_b >= 50 ? "시가총액 $50B 이상의 대형주이므로 기관 수급이 안정적이지만, 소형주처럼 몇 배씩 급등하기보다는 <strong>큰 추세로 30~80%를 노리는 전략</strong>이 적합합니다." : s.market_cap_b && s.market_cap_b >= 2 ? "시가총액 $2B~$50B 사이의 중·대형 성장주 구간으로, <strong>실적만 뒷받침되면 기관 매집과 함께 가장 탄력적인 VCP 상승</strong>이 잘 나오는 크기입니다." : "시가총액이 비교적 작은 소형주 구간이므로 변동성이 큽니다. <strong>손절선(7%)과 비중 조절</strong>을 더욱 엄격하게 지켜야 합니다."}</p>
             </div>
           </div>
