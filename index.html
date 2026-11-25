@@ -1848,6 +1848,7 @@ python -m unittest discover -s tests -v</pre>
           const accel = last.v > prev.v && last.v >= 20;
           const strong = last.v >= 25;
           let verdict = "";
+          const hasExtreme = yVals.some(x => x.v >= 200);
           if (accel) {
             verdict = `<strong class="text-emerald-700">최상급 (이익 성장 가속):</strong> 최근 EPS 증가율이 직전(${prev.v > 0 ? "+" : ""}${prev.v}%)보다 더 높아진 <strong>+${last.v}%</strong>입니다. 미너비니와 오닐이 가장 좋아하는 '실적 가속' 패턴입니다.`;
           } else if (strong) {
@@ -1859,7 +1860,10 @@ python -m unittest discover -s tests -v</pre>
           } else {
             verdict = `<strong class="text-slate-800">완만한 성장:</strong> 최근 EPS 증가율이 <strong>+${last.v}%</strong>입니다. 오닐 기준(+25%↑)에는 다소 못 미치므로, 매출 가속이나 신제품 촉매가 있는지 함께 살펴보세요.`;
           }
-          finComEl.innerHTML = `<div class="font-bold text-slate-900 mb-0.5">미너비니 · 오닐 실적(EPS YoY) 판독 <span class="font-normal text-slate-500">(${recentStr})</span></div><div>${verdict}</div>`;
+          const extremeNote = hasExtreme
+            ? `<div class="mt-1.5 pt-1.5 border-t border-slate-200 text-slate-600"><strong>※ 극단치(+200%↑) 해석 주의 (기저효과):</strong> 전년 EPS가 적자나 0 부근(-$0.01·$0.04 등)이면 이익이 조금만 늘어도 +300%~+3000%처럼 크게 찍힙니다. 미너비니·오닐은 이 숫자 자체보다 <strong>① 기저효과가 끝난 다음 기간에도 +25%↑ 성장이 이어지는지</strong>, <strong>② 세금 환급 등 일회성이 아니라 매출($B)이 함께 계단식으로 늘고 있는지</strong>를 봅니다.</div>`
+            : "";
+          finComEl.innerHTML = `<div class="font-bold text-slate-900 mb-0.5">미너비니 · 오닐 실적(EPS YoY) 판독 <span class="font-normal text-slate-500">(${recentStr})</span></div><div>${verdict}</div>${extremeNote}`;
         } else {
           finComEl.innerHTML = `<div class="font-bold text-slate-900 mb-0.5">미너비니 · 오닐 실적(EPS YoY) 판독</div><div>비교 가능한 전년 동기 대비(YoY) 분기 데이터가 부족합니다. 최소 5개 분기 이상 실적이 쌓이면 가속/둔화 여부를 자동 판독합니다.</div>`;
         }
@@ -1950,7 +1954,7 @@ python -m unittest discover -s tests -v</pre>
         priorUp = +(((baseHiBar.high - priorLoBar.low) / priorLoBar.low) * 100).toFixed(1);
       }
       const c1RefHtml = (priorLoBar && baseHiBar)
-        ? `<div class="text-[10px] text-slate-600 font-medium mt-0.5 tabular-nums">기준 저점 ${priorLoBar.time}($${priorLoBar.low.toFixed(2)}) → 비교 고점 ${baseHiBar.time}($${baseHiBar.high.toFixed(2)})</div>`
+        ? `<div class="text-[10px] text-slate-600 font-medium mt-0.5 tabular-nums">기준 저점 ${priorLoBar.time}($${priorLoBar.low.toFixed(2)}) → 비교 고점 ${baseHiBar.time}($${baseHiBar.high.toFixed(2)}) <span class="text-slate-400">(최근 90일 베이스 천장 vs 이전 120일 출발 바닥)</span></div>`
         : "";
 
       const c1Pass = priorUp !== null && priorUp >= 25;
@@ -2179,6 +2183,18 @@ python -m unittest discover -s tests -v</pre>
         tvChartInst.subscribeCrosshairMove(param => {
           if (param && param.time && candleMap[param.time]) updateHud(candleMap[param.time]);
         });
+        if (mainSeries) {
+          const visSet = new Set(activeCandles.map(c => c.time));
+          const vcpMarks = [];
+          if (priorLoBar && visSet.has(priorLoBar.time)) {
+            vcpMarks.push({ time: priorLoBar.time, position: "belowBar", color: "#059669", shape: "arrowUp", text: `출발저점 $${priorLoBar.low.toFixed(1)}` });
+          }
+          if (pivBar && visSet.has(pivBar.time)) {
+            vcpMarks.push({ time: pivBar.time, position: "aboveBar", color: "#2563eb", shape: "arrowDown", text: `피벗고점 $${pivBar.high.toFixed(1)}` });
+          }
+          vcpMarks.sort((a, b) => a.time.localeCompare(b.time));
+          if (vcpMarks.length) mainSeries.setMarkers(vcpMarks);
+        }
         tvChartInst.timeScale().fitContent();
 
         // Render TraderLion RS Line Panel above Candlestick Chart (with top-left MTS legend & clean right axis)
