@@ -306,7 +306,7 @@
                 <th class="py-2.5 px-4 font-semibold text-right">평균 RS</th>
                 <th class="py-2.5 px-4 font-semibold text-right">RS 80+ 주도주 수 (클릭)</th>
                 <th class="py-2.5 px-4 font-semibold text-right">상승추세 합격 수 (클릭)</th>
-                <th class="py-2.5 px-4 font-semibold text-right">RS 90+ 초강세</th>
+                <th class="py-2.5 px-4 font-semibold text-right">RS 90+ 초강세 (클릭)</th>
               </tr>
             </thead>
             <tbody id="sector-tbody" class="divide-y divide-slate-100"></tbody>
@@ -327,6 +327,14 @@
           <div id="screener-mode-note" class="text-xs text-slate-500">
             <strong>SEPA 모드:</strong> 고성장주 탈락 방지를 위해 PER·배당·ROE 제한 없음 | <strong>Legacy 모드:</strong> 기존 V1.0 방식(저PER·고ROE·고배당 중심 필터)
           </div>
+        </div>
+
+        <!-- Beginner Practical Guide for Tab 3 -->
+        <div class="p-3 rounded-xl bg-indigo-50/70 border border-indigo-200 text-xs text-slate-700 leading-relaxed space-y-1">
+          <div class="font-bold text-indigo-950">미너비니식 스크리너 3단계 활용법 (이 화면에서 매수 후보 압축하기)</div>
+          <div><strong>① 1단계 (강한 종목만 남기기):</strong> <code>최소 RS Rank</code>를 <strong>80점↑</strong>, <code>상승추세 10조건(TT)</code>을 <strong>PASS만 보기</strong>로 맞추고, 2번 마켓 리더십에서 확인한 <strong>주도 섹터</strong>를 고르세요.</div>
+          <div><strong>② 2단계 (차트 모양으로 2차 선별):</strong> 오른쪽 <code>차트 모양 · 상태</code> 열에서 <strong>수축완성 (VCP)</strong> · <strong>수축검토필요</strong> · <strong>수축후보</strong>가 뜬 종목을 클릭하면 4번 차트 화면으로 바로 이동합니다.</div>
+          <div><strong>③ 왜 SEPA 모드에서는 P/E·ROE를 안 보나요?</strong> 실제 고성장 주도주는 PER이 40~80배로 비싸 보일 때 가장 크게 오릅니다. SEPA 모드에서는 미수집 기본값인 PER·ROE 대신 <strong>피벗 대비(%)</strong>와 <strong>거래량 배수(1.40배↑)</strong>를 바로 비교하세요. (Legacy 모드는 가치·배당 필터용)</div>
         </div>
 
         <!-- Legacy Controls (Shown when Legacy Mode active) -->
@@ -414,14 +422,14 @@
           <table class="w-full text-left border-collapse text-xs">
             <thead>
               <tr class="bg-slate-50 border-b border-slate-200 text-slate-500 font-semibold sticky top-0">
-                <th class="py-2.5 px-3">Ticker</th>
-                <th class="py-2.5 px-3">Sector</th>
-                <th class="py-2.5 px-3 text-right">Price</th>
-                <th class="py-2.5 px-3 text-right">System RS</th>
-                <th class="py-2.5 px-3 text-center">TT Status</th>
-                <th class="py-2.5 px-3 text-right">P/E</th>
-                <th class="py-2.5 px-3 text-right">ROE</th>
-                <th class="py-2.5 px-3">Setup / Reason</th>
+                <th class="py-2.5 px-3">티커 · 기업명</th>
+                <th class="py-2.5 px-3">섹터 (업종)</th>
+                <th class="py-2.5 px-3 text-right">현재가</th>
+                <th class="py-2.5 px-3 text-right">RS 순위</th>
+                <th class="py-2.5 px-3 text-center">상승추세(TT)</th>
+                <th id="scr-col6-th" class="py-2.5 px-3 text-right">피벗 대비</th>
+                <th id="scr-col7-th" class="py-2.5 px-3 text-right">거래량 배수</th>
+                <th class="py-2.5 px-3">차트 모양 · 상태</th>
               </tr>
             </thead>
             <tbody id="scr-tbody" class="divide-y divide-slate-100"></tbody>
@@ -1573,6 +1581,9 @@ python -m unittest discover -s tests -v</pre>
       if (mode === "tt") {
         state.sepaTt = "PASS";
         state.sepaMinRs = 70;
+      } else if (mode === "rs90") {
+        state.sepaTt = "ALL";
+        state.sepaMinRs = 90;
       } else if (mode === "rs80") {
         state.sepaTt = "ALL";
         state.sepaMinRs = 80;
@@ -1600,7 +1611,7 @@ python -m unittest discover -s tests -v</pre>
       if (secEl) secEl.value = state.sepaSector;
       switchTab("screener");
       const secLabel = state.sepaSector === "ALL" ? "전체 섹터" : fmtSector(state.sepaSector);
-      const modeLabel = mode === "tt" ? "상승추세 합격 종목" : mode === "rs80" ? "RS 80+ 주도주" : "종목";
+      const modeLabel = mode === "tt" ? "상승추세 합격 종목" : mode === "rs90" ? "RS 90+ 초강세 주도주" : mode === "rs80" ? "RS 80+ 주도주" : "종목";
       showToast(`${secLabel} · ${modeLabel} 화면으로 이동했습니다`);
     }
 
@@ -1719,7 +1730,9 @@ python -m unittest discover -s tests -v</pre>
           <td class="py-3 px-4 text-right tabular-nums">
             <button type="button" onclick="jumpToScreenerSector('${sec.replace(/'/g, "\'")}', 'tt')" class="inline-flex items-center px-2 py-0.5 rounded-md bg-emerald-50 text-emerald-700 font-bold hover:bg-emerald-100 underline decoration-emerald-300 cursor-pointer transition">${v.tt}</button>
           </td>
-          <td class="py-3 px-4 text-right tabular-nums">${v.em}</td>
+          <td class="py-3 px-4 text-right tabular-nums">
+            <button type="button" onclick="jumpToScreenerSector('${sec.replace(/'/g, "\\'")}', 'rs90')" class="inline-flex items-center px-2 py-0.5 rounded-md bg-purple-50 text-purple-700 font-bold hover:bg-purple-100 underline decoration-purple-300 cursor-pointer transition">${v.em}</button>
+          </td>
         </tr>
       `).join("");
     }
@@ -1746,154 +1759,63 @@ python -m unittest discover -s tests -v</pre>
           return true;
         });
       }
-      document.getElementById("scr-tbody").innerHTML = rows.map(s => `
+
+      const col6Th = document.getElementById("scr-col6-th");
+      const col7Th = document.getElementById("scr-col7-th");
+      if (col6Th && col7Th) {
+        if (state.screenerMode === "legacy") {
+          col6Th.textContent = "P/E (참고)";
+          col7Th.textContent = "ROE (참고)";
+        } else {
+          col6Th.textContent = "피벗 대비";
+          col7Th.textContent = "거래량 배수";
+        }
+      }
+
+      const patKrScr = {
+        "VCP_VALIDATED": "수축완성 (VCP)", "VCP_REVIEW_REQUIRED": "수축검토필요",
+        "VCP_CANDIDATE": "수축후보", "NO_SUPPORTED_PATTERN": "패턴없음", "INSUFFICIENT_DATA": "데이터부족"
+      };
+      const uniReasonKr = {
+        "HEALTHCARE_EXCLUDED_BY_SETTING": "헬스케어 제외 설정",
+        "LOW_LIQUIDITY_LT_10M": "거래대금 부족($1천만↓)",
+        "NEGATIVE_OR_ZERO_EPS": "적자 기업(EPS≤0)",
+        "PRICE_LT_10": "동전주($10 미만)",
+        "NON_COMMON_STOCK": "ETF·스팩·우선주 등",
+        "SPAC_EXCLUDED": "스팩(SPAC) 제외"
+      };
+
+      document.getElementById("scr-tbody").innerHTML = rows.map(s => {
+        const isExcl = s.universe_status === "EXCLUDED";
+        const patTxt = isExcl
+          ? (uniReasonKr[s.universe_reason] || s.universe_reason || "제외됨")
+          : (patKrScr[s.pattern_status] || s.pattern_status);
+        const patCls = isExcl
+          ? "text-rose-600 font-semibold"
+          : (s.pattern_status === "VCP_VALIDATED" || s.pattern_status === "VCP_REVIEW_REQUIRED")
+            ? "text-emerald-700 font-bold"
+            : s.pattern_status === "VCP_CANDIDATE"
+              ? "text-blue-700 font-semibold"
+              : "text-slate-500";
+        const col6Val = state.screenerMode === "legacy"
+          ? `${s.pe}`
+          : `${s.pivot_distance_pct > 0 ? "+" : ""}${s.pivot_distance_pct}%`;
+        const col7Val = state.screenerMode === "legacy"
+          ? `${s.roe}%`
+          : `${s.vol_ratio}배`;
+        return `
         <tr data-ticker="${s.ticker}" class="scr-row cursor-pointer hover:bg-slate-50">
           <td class="py-2.5 px-3 font-bold text-slate-900">${s.ticker} <span class="font-normal text-slate-500">${s.name}</span></td>
           <td class="py-2.5 px-3 text-slate-600">${fmtSector(s.sector)}</td>
           <td class="py-2.5 px-3 text-right tabular-nums">$${s.price.toFixed(2)}</td>
-          <td class="py-2.5 px-3 text-right tabular-nums font-bold">${s.system_rs_rank}</td>
-          <td class="py-2.5 px-3 text-center"><span class="px-2 py-0.5 rounded text-[11px] font-semibold ${s.tt_status === "PASS" ? "bg-emerald-50 text-emerald-700" : "bg-rose-50 text-rose-700"}">${s.tt_status}</span></td>
-          <td class="py-2.5 px-3 text-right tabular-nums">${s.pe.toFixed(1)}</td>
-          <td class="py-2.5 px-3 text-right tabular-nums">${s.roe.toFixed(1)}%</td>
-          <td class="py-2.5 px-3 text-[11px] text-slate-600">${s.universe_status === "EXCLUDED" ? s.universe_reason : s.pattern_status}</td>
-        </tr>
-      `).join("");
-    }
-
-    let tvChartInst = null, tvRsChartInst = null;
-
-    function buildDemoCandles(prices, dates) {
-      return prices.map((c, i) => {
-        const prev = i > 0 ? prices[i - 1] : c * 0.99;
-        const o = +prev.toFixed(2);
-        const h = +(Math.max(o, c) * 1.012).toFixed(2);
-        const l = +(Math.min(o, c) * 0.988).toFixed(2);
-        const t = (dates && dates[i] && /^\d{4}-\d{2}-\d{2}$/.test(dates[i]))
-          ? dates[i]
-          : new Date(Date.now() - (prices.length - 1 - i) * 86400000).toISOString().slice(0, 10);
-        return { time: t, open: o, high: h, low: l, close: c, volume: 1000000 + (i % 7) * 150000 };
-      });
-    }
-
-    let finChartEpsInst = null, finChartSalesInst = null, finChartNetInst = null;
-
-    function makeMiniBarChart(canvasId, prevInst, labels, data, colorHex) {
-      const ctx = document.getElementById(canvasId).getContext("2d");
-      if (prevInst) prevInst.destroy();
-      return new Chart(ctx, {
-        type: "bar",
-        data: {
-          labels,
-          datasets: [{ data, backgroundColor: colorHex, borderRadius: 4 }]
-        },
-        options: {
-          responsive: true,
-          maintainAspectRatio: false,
-          plugins: { legend: { display: false } },
-          scales: {
-            x: { grid: { display: false }, ticks: { color: "#94a3b8", font: { size: 10 } } },
-            y: { position: "right", grid: { color: "rgba(148,163,184,0.15)" }, ticks: { color: "#94a3b8", font: { size: 10 } } }
-          }
-        }
-      });
-    }
-
-    function renderFinancialPanel(s) {
-      const hasReal = s.finData && s.finData[state.finMode] && s.finData[state.finMode].labels.length > 0;
-      document.getElementById("fin-source-note").textContent = hasReal
-        ? `${(s.finData && s.finData.source) || "SEC EDGAR / Yahoo Finance"} 실제 재무제표 (${state.finMode === "annual" ? "연간 + TTM" : "분기별 Q1~Q4"})`
-        : `샘플 예시 표시 중 (상승추세 합격·Nasdaq 100 실제 재무제표는 Actions 업데이트 후 자동 로드)`;
-
-      const demoAnnual = {
-        labels: ["2022", "2023", "2024", "2025", "TTM"],
-        revenueB: s.revenueB ? [...s.revenueB, +(s.revenueB[s.revenueB.length - 1] * 1.08).toFixed(1)] : [10, 12, 14, 16, 17.3],
-        netIncomeB: s.netIncomeB ? [...s.netIncomeB, +(s.netIncomeB[s.netIncomeB.length - 1] * 1.1).toFixed(1)] : [2, 2.4, 2.9, 3.5, 3.8],
-        eps: [2.1, 2.5, 3.1, 3.8, 4.1],
-        epsYoY: [null, 19.0, 24.0, 22.6, 7.9]
-      };
-      const demoQuarterly = {
-        labels: ["Q1 '25", "Q2 '25", "Q3 '25", "Q4 '25", "Q1 '26", "Q2 '26", "Q3 '26"],
-        revenueB: [3.2, 3.4, 3.6, 3.9, 4.1, 4.4, 4.8],
-        netIncomeB: [0.6, 0.7, 0.75, 0.85, 0.92, 1.05, 1.18],
-        eps: [0.68, 0.74, 0.81, 0.92, 0.98, 1.12, 1.24],
-        epsYoY: [null, null, null, null, 44.1, 51.4, 53.1]
-      };
-
-      const fin = hasReal ? s.finData[state.finMode] : (state.finMode === "quarterly" ? demoQuarterly : demoAnnual);
-      finChartEpsInst = makeMiniBarChart("finChartEps", finChartEpsInst, fin.labels, fin.eps, "#3b82f6");
-      finChartSalesInst = makeMiniBarChart("finChartSales", finChartSalesInst, fin.labels, fin.revenueB, "#a855f7");
-      finChartNetInst = makeMiniBarChart("finChartNet", finChartNetInst, fin.labels, fin.netIncomeB, "#14b8a6");
-
-      document.getElementById("fin-detail-tbody").innerHTML = fin.labels.map((lbl, i) => {
-        const yoy = fin.epsYoY ? fin.epsYoY[i] : null;
-        const yoyTxt = yoy === null || yoy === undefined ? "-" : `${yoy > 0 ? "+" : ""}${yoy}%`;
-        const yoyCls = yoy > 0 ? "text-emerald-600 font-bold" : yoy < 0 ? "text-rose-600 font-bold" : "text-slate-400";
-        return `
-          <tr>
-            <td class="py-1.5 px-2 font-semibold text-slate-800">${lbl}</td>
-            <td class="py-1.5 px-2 text-right">${fin.revenueB[i] ?? "-"}</td>
-            <td class="py-1.5 px-2 text-right">${fin.netIncomeB[i] ?? "-"}</td>
-            <td class="py-1.5 px-2 text-right font-semibold text-blue-700">${fin.eps[i] ?? "-"}</td>
-            <td class="py-1.5 px-2 text-right ${yoyCls}">${yoyTxt}</td>
-          </tr>
-        `;
+          <td class="py-2.5 px-3 text-right tabular-nums font-bold">${s.system_rs_rank}점</td>
+          <td class="py-2.5 px-3 text-center"><span class="px-2 py-0.5 rounded text-[11px] font-semibold ${s.tt_status === "PASS" ? "bg-emerald-50 text-emerald-700" : "bg-slate-100 text-slate-500"}">${s.tt_status === "PASS" ? "합격" : "미달"}</span></td>
+          <td class="py-2.5 px-3 text-right tabular-nums">${col6Val}</td>
+          <td class="py-2.5 px-3 text-right tabular-nums">${col7Val}</td>
+          <td class="py-2.5 px-3 ${patCls}">${patTxt}</td>
+        </tr>`;
       }).join("");
-
-      const finComEl = document.getElementById("fin-minervini-comment");
-      if (finComEl) {
-        const yVals = (fin.epsYoY || []).map((v, idx) => ({ lbl: fin.labels[idx], v })).filter(x => x.v !== null && x.v !== undefined);
-        if (yVals.length >= 2) {
-          const last = yVals[yVals.length - 1], prev = yVals[yVals.length - 2];
-          const recentStr = yVals.slice(-3).map(x => `${x.lbl}(${x.v > 0 ? "+" : ""}${x.v}%)`).join(" → ");
-          const accel = last.v > prev.v && last.v >= 20;
-          const strong = last.v >= 25;
-          let verdict = "";
-          const hasExtreme = yVals.some(x => x.v >= 200);
-          if (accel) {
-            verdict = `<strong class="text-emerald-700">최상급 (이익 성장 가속):</strong> 최근 EPS 증가율이 직전(${prev.v > 0 ? "+" : ""}${prev.v}%)보다 더 높아진 <strong>+${last.v}%</strong>입니다. 미너비니와 오닐이 가장 좋아하는 '실적 가속' 패턴입니다.`;
-          } else if (strong) {
-            verdict = `<strong class="text-emerald-700">양호 (고성장 유지):</strong> 최근 EPS 증가율이 <strong>+${last.v}%</strong>로 오닐의 최소 기준(+25%↑)을 충족합니다. 매출도 함께 늘고 있다면 기관 수급 유입 조건에 부합합니다.`;
-          } else if (last.v > 0 && last.v < prev.v) {
-            verdict = `<strong class="text-amber-700">성장 속도 둔화 (점검 필요):</strong> 직전(${prev.v > 0 ? "+" : ""}${prev.v}%) 대비 최근 증가율이 <strong>+${last.v}%</strong>로 낮아졌습니다. 매출이 꾸준히 늘고 있더라도, 이익 성장률이 다시 20~25%↑로 재가속하는지 다음 분기 가이던스를 확인하세요.`;
-          } else if (last.v <= 0) {
-            verdict = `<strong class="text-rose-700">주의 (역성장):</strong> 최근 EPS 증가율이 <strong>${last.v}%</strong>로 전년 동기 대비 줄었습니다. 일시적 비용 때문인지 본업 훼손인지 확인 전까지는 보수적으로 접근하세요.`;
-          } else {
-            verdict = `<strong class="text-slate-800">완만한 성장:</strong> 최근 EPS 증가율이 <strong>+${last.v}%</strong>입니다. 오닐 기준(+25%↑)에는 다소 못 미치므로, 매출 가속이나 신제품 촉매가 있는지 함께 살펴보세요.`;
-          }
-          const extremeNote = hasExtreme
-            ? `<div class="mt-1.5 pt-1.5 border-t border-slate-200 text-slate-600"><strong>※ 극단치(+200%↑) 해석 주의 (기저효과):</strong> 전년 EPS가 적자나 0 부근(-$0.01·$0.04 등)이면 이익이 조금만 늘어도 +300%~+3000%처럼 크게 찍힙니다. 미너비니·오닐은 이 숫자 자체보다 <strong>① 기저효과가 끝난 다음 기간에도 +25%↑ 성장이 이어지는지</strong>, <strong>② 세금 환급 등 일회성이 아니라 매출($B)이 함께 계단식으로 늘고 있는지</strong>를 봅니다.</div>`
-            : "";
-          finComEl.innerHTML = `<div class="font-bold text-slate-900 mb-0.5">미너비니 · 오닐 실적(EPS YoY) 판독 <span class="font-normal text-slate-500">(${recentStr})</span></div><div>${verdict}</div>${extremeNote}`;
-        } else {
-          finComEl.innerHTML = `<div class="font-bold text-slate-900 mb-0.5">미너비니 · 오닐 실적(EPS YoY) 판독</div><div>비교 가능한 전년 동기 대비(YoY) 분기 데이터가 부족합니다. 최소 5개 분기 이상 실적이 쌓이면 가속/둔화 여부를 자동 판독합니다.</div>`;
-        }
-      }
-    }
-
-    function resampleCandles(candles, tf) {
-      if (tf === "D" || !candles.length) return candles;
-      const groups = new Map();
-      for (const c of candles) {
-        let key = c.time.slice(0, 7); // Monthly YYYY-MM
-        if (tf === "W") {
-          const dt = new Date(c.time + "T00:00:00Z");
-          const day = dt.getUTCDay();
-          const diff = (day === 0 ? -6 : 1 - day);
-          dt.setUTCDate(dt.getUTCDate() + diff);
-          key = dt.toISOString().slice(0, 10);
-        }
-        if (!groups.has(key)) {
-          groups.set(key, { time: c.time, open: c.open, high: c.high, low: c.low, close: c.close, volume: c.volume || 0 });
-        } else {
-          const g = groups.get(key);
-          g.time = c.time;
-          g.high = Math.max(g.high, c.high);
-          g.low = Math.min(g.low, c.low);
-          g.close = c.close;
-          g.volume += (c.volume || 0);
-        }
-      }
-      return Array.from(groups.values());
+      document.getElementById("scr-count").textContent = `${rows.length}개 종목`;
     }
 
     function renderSetupsTab() {
