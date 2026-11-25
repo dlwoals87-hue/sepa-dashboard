@@ -44,9 +44,9 @@ def detect_vcp_pattern(df: Optional[pd.DataFrame], cfg: VCPConfig) -> Dict:
 
     # Measure 60D base excluding today's breakout bar if a breakout just occurred
     base_df = df.iloc[-61:-1] if (is_today_breakout and len(df) >= 61) else df.tail(60)
-    ref_end_idx = -1 if is_today_breakout else len(df)
-    recent_90 = df.iloc[max(0, len(df) + ref_end_idx - 90) : (len(df) + ref_end_idx)] if ref_end_idx < 0 else df.tail(90)
-    prior_120 = df.iloc[max(0, len(df) + ref_end_idx - 210) : max(0, len(df) + ref_end_idx - 90)]
+    end_pos = (len(df) - 1) if is_today_breakout else len(df)
+    recent_90 = df.iloc[max(0, end_pos - 90) : end_pos]
+    prior_120 = df.iloc[max(0, end_pos - 210) : max(0, end_pos - 90)]
     if prior_120.empty or recent_90.empty:
         return {"pattern_status": "INSUFFICIENT_DATA", "pattern_type": "NONE", "pivot": None, "contractions": []}
 
