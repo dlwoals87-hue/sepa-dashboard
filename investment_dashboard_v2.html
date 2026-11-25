@@ -2005,17 +2005,32 @@ python -m unittest discover -s tests -v</pre>
         "FAILED BREAKOUT": "돌파실패", "WATCH": "지켜보기", "DATA UNAVAILABLE": "데이터없음"
       };
       const fmtMD = (t) => t ? t.slice(5).replace("-", "/") : "-";
-      const b60 = rawDailyCandles.slice(-60);
+      const calcPullback = (w) => {
+        let runHi = -1, runHiBar = w[0], maxDd = 0, ddHiBar = w[0], ddLoBar = w[0];
+        for (const bar of w) {
+          if (bar.high > runHi) { runHi = bar.high; runHiBar = bar; }
+          if (runHi > 0) {
+            const dd = ((runHi - bar.low) / runHi) * 100;
+            if (dd > maxDd) { maxDd = dd; ddHiBar = runHiBar; ddLoBar = bar; }
+          }
+        }
+        return { dd: +maxDd.toFixed(1), ddHiBar, ddLoBar };
+      };
+      const prior59Hi = rawDailyCandles.length >= 60 ? Math.max(...rawDailyCandles.slice(-60, -1).map(x => x.high)) : 0;
+      const lastRaw = rawDailyCandles[rawDailyCandles.length - 1] || { close: s.price, volume: 0 };
+      const preV50 = rawDailyCandles.length >= 51 ? rawDailyCandles.slice(-51, -1).reduce((a, b) => a + (b.volume || 0), 0) / 50 : 0;
+      const isTodayBo = rawDailyCandles.length >= 61 && lastRaw.close > prior59Hi && preV50 > 0 && (lastRaw.volume / preV50) >= 1.40;
+      const b60 = isTodayBo ? rawDailyCandles.slice(-61, -1) : rawDailyCandles.slice(-60);
       const wSlices = b60.length >= 60 ? [b60.slice(0, 20), b60.slice(20, 40), b60.slice(40, 60)] : [];
       const calcC = wSlices.length === 3 ? wSlices.map((w, idx) => {
         let hiBar = w[0], loBar = w[0];
         w.forEach(x => { if (x.high > hiBar.high) hiBar = x; if (x.low < loBar.low) loBar = x; });
-        const d = hiBar.high > 0 ? +(((hiBar.high - loBar.low) / hiBar.high) * 100).toFixed(1) : 0;
+        const pb = calcPullback(w);
         const av = w.reduce((a, b) => a + (b.volume || 0), 0) / w.length;
         return {
           stage: `T${idx + 1}`, high: hiBar.high.toFixed(2), low: loBar.low.toFixed(2),
-          hiDate: hiBar.time, loDate: loBar.time, startDate: w[0].time, endDate: w[w.length - 1].time,
-          depth_pct: d, avg_vol: av
+          hiDate: pb.ddHiBar.time, loDate: pb.ddLoBar.time, startDate: w[0].time, endDate: w[w.length - 1].time,
+          depth_pct: pb.dd, avg_vol: av
         };
       }) : (s.contractions || []);
 

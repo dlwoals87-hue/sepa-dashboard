@@ -155,5 +155,25 @@ class TestSepaEngine(unittest.TestCase):
             self.assertTrue(os.path.exists(j) and os.path.exists(c) and os.path.exists(x))
 
 
+
+    def test_breakout_bar_does_not_distort_contraction(self):
+        dates = pd.date_range("2026-01-01", periods=220, freq="B")
+        # Prior uptrend +100% then 60D contracting base around 50 -> 58, then big breakout day to 70 on 2x volume
+        closes = [25.0] * 100 + [25.0 + i * 0.5 for i in range(60)]
+        # T1: 55 -> 47 (-14.5%), T2: 56 -> 51 (-8.9%), T3: 58 -> 55 (-5.2%)
+        base_c = [55,54,53,51,49,47,48,50,52,53,54,55,54,53,52,53,54,55,56,55] +                  [56,55,54,53,52,51,52,53,54,55,56,55,54,53,54,55,56,56,57,56] +                  [57,56,56,55,55,56,57,58,57,56,56,57,57,58,57,57,58,58,58]
+        closes = closes + base_c + [70.0]
+        vols = [1000000] * 219 + [2500000]
+        df = pd.DataFrame({
+            "Open": closes,
+            "High": [c * 1.01 for c in closes],
+            "Low": [c * 0.99 for c in closes],
+            "Close": closes,
+            "Volume": vols,
+        }, index=dates[:len(closes)])
+        res = detect_vcp_pattern(df, VCPConfig())
+        self.assertIn(res["pattern_status"], ("VCP_VALIDATED", "VCP_REVIEW_REQUIRED"))
+        self.assertLess(res["pivot"], 65.0)
+
 if __name__ == "__main__":
     unittest.main()
