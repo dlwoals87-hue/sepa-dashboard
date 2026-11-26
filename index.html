@@ -33,6 +33,9 @@
             <span id="data-mode-badge" class="px-2 py-0.5 rounded-full text-[11px] font-semibold bg-amber-50 text-amber-800 border border-amber-200">
               샘플 모드 (JSON 연동 지원)
             </span>
+            <span id="last-updated-badge" class="px-2 py-0.5 rounded-full text-[11px] font-medium bg-slate-100 text-slate-600 border border-slate-200 tabular-nums">
+              업데이트: 2026-11-27 01:15 AM
+            </span>
           </div>
           <p class="text-[11px] text-slate-500 hidden sm:block">Market → Leadership → Stock → Setup → Entry → Risk → Position → Review</p>
         </div>
@@ -1399,12 +1402,54 @@ python -m unittest discover -s tests -v</pre>
     let openPositions = [
       { ticker: "PLTR", shares: 10, avg_entry: 56.0, current_price: 61.8, initial_stop: 52.1, stop_price: 54.0, stop_source: "VALIDATED_TECHNICAL_STOP", price_date: "데모 기준", realized_pnl_usd: 0, realized_shares: 0 }
     ];
+    function formatUpdateTimestamp(isoStr) {
+      try {
+        const d = isoStr ? new Date(isoStr) : new Date(document.lastModified || Date.now());
+        if (isNaN(d.getTime())) return "2026-11-27 01:15 AM";
+        const kst = new Date(d.toLocaleString("en-US", { timeZone: "Asia/Seoul" }));
+        const yyyy = kst.getFullYear();
+        const mm = String(kst.getMonth() + 1).padStart(2, "0");
+        const dd = String(kst.getDate()).padStart(2, "0");
+        let hh = kst.getHours();
+        const min = String(kst.getMinutes()).padStart(2, "0");
+        const ampm = hh >= 12 ? "PM" : "AM";
+        hh = hh % 12 || 12;
+        return `${yyyy}-${mm}-${dd} ${String(hh).padStart(2, "0")}:${min} ${ampm}`;
+      } catch (e) {
+        return "2026-11-27 01:15 AM";
+      }
+    }
+    const updBadgeInit = document.getElementById("last-updated-badge");
+    if (updBadgeInit) updBadgeInit.textContent = `업데이트: ${formatUpdateTimestamp(null)}`;
+
+    function applyAutoStopRatchet(p) {
+      const rUnit = Math.max(0.01, p.avg_entry - p.initial_stop);
+      const curR = (p.current_price - p.avg_entry) / rUnit;
+      let targetStop = p.stop_price;
+      let reason = "";
+      if (curR >= 3) {
+        const p2R = +(p.avg_entry + rUnit * 2).toFixed(2);
+        if (p2R > targetStop) { targetStop = p2R; reason = `+3R 돌파 → 이익보호선 +2R($${p2R.toFixed(2)}) 자동 상향`; }
+      } else if (curR >= 2) {
+        const p1R = +(p.avg_entry + rUnit).toFixed(2);
+        if (p1R > targetStop) { targetStop = p1R; reason = `+2R 돌파 → 이익보호선 +1R($${p1R.toFixed(2)}) 자동 상향`; }
+      } else if (curR >= 1) {
+        const be = +p.avg_entry.toFixed(2);
+        if (be > targetStop) { targetStop = be; reason = `+1R 돌파 → 이익보호선 본전($${be.toFixed(2)}) 자동 상향`; }
+      }
+      if (targetStop > p.stop_price) {
+        p.stop_price = targetStop;
+        p.auto_raised_msg = reason;
+      }
+    }
+
     function syncOpenPositionsPrices(tradeDateLabel) {
       openPositions.forEach(p => {
         const s = stocks.find(x => x.ticker === p.ticker);
         if (s && Number(s.price) > 0) {
           p.current_price = Number(s.price);
           p.price_date = tradeDateLabel || currentTradeDate || "최신";
+          applyAutoStopRatchet(p);
         }
       });
     }
@@ -2529,6 +2574,11 @@ python -m unittest discover -s tests -v</pre>
           })));
           candlePctSeries.createPriceLine({ price: toPct(s.pivot), color: "#2563eb", lineWidth: 1, lineStyle: 2, axisLabelVisible: false, title: "" });
           candlePctSeries.createPriceLine({ price: toPct(s.pivot * 0.93), color: "#e11d48", lineWidth: 1, lineStyle: 2, axisLabelVisible: false, title: "" });
+          const heldPctPos = openPositions.find(p => p.ticker === s.ticker);
+          if (heldPctPos) {
+            candlePctSeries.createPriceLine({ price: toPct(heldPctPos.avg_entry), color: "#059669", lineWidth: 2, lineStyle: 0, axisLabelVisible: true, title: `내 매수 $${heldPctPos.avg_entry.toFixed(2)}` });
+            candlePctSeries.createPriceLine({ price: toPct(heldPctPos.stop_price), color: heldPctPos.stop_price >= heldPctPos.avg_entry ? "#d97706" : "#dc2626", lineWidth: 2, lineStyle: 2, axisLabelVisible: true, title: `${heldPctPos.stop_price >= heldPctPos.avg_entry ? "보호선" : "내 손절"} $${heldPctPos.stop_price.toFixed(2)}` });
+          }
 
           if (state.setupSmaOverlay) {
             addSmaSeries(smaBaseCandles, maPeriods[0], "#10b981", 0, toPct, 1);
@@ -2549,6 +2599,11 @@ python -m unittest discover -s tests -v</pre>
           candleSeries.setData(activeCandles);
           candleSeries.createPriceLine({ price: s.pivot, color: "#2563eb", lineWidth: 1, lineStyle: 2, axisLabelVisible: false, title: "" });
           candleSeries.createPriceLine({ price: +(s.pivot * 0.93).toFixed(2), color: "#e11d48", lineWidth: 1, lineStyle: 2, axisLabelVisible: false, title: "" });
+          const heldPosChart = openPositions.find(p => p.ticker === s.ticker);
+          if (heldPosChart) {
+            candleSeries.createPriceLine({ price: heldPosChart.avg_entry, color: "#059669", lineWidth: 2, lineStyle: 0, axisLabelVisible: true, title: `내 매수 $${heldPosChart.avg_entry.toFixed(2)}` });
+            candleSeries.createPriceLine({ price: heldPosChart.stop_price, color: heldPosChart.stop_price >= heldPosChart.avg_entry ? "#d97706" : "#dc2626", lineWidth: 2, lineStyle: 2, axisLabelVisible: true, title: `${heldPosChart.stop_price >= heldPosChart.avg_entry ? "보호선" : "내 손절"} $${heldPosChart.stop_price.toFixed(2)}` });
+          }
 
           if (state.setupSmaOverlay) {
             addSmaSeries(smaBaseCandles, maPeriods[0], "#10b981", 0, null, 1);
@@ -2592,6 +2647,11 @@ python -m unittest discover -s tests -v</pre>
           }
           if (pivBar && visSet.has(pivBar.time)) {
             vcpMarks.push({ time: pivBar.time, position: "aboveBar", color: "#2563eb", shape: "arrowDown", text: `피벗고점 $${pivBar.high.toFixed(1)}` });
+          }
+          const heldPosMark = openPositions.find(p => p.ticker === s.ticker);
+          if (heldPosMark && activeCandles.length) {
+            const buyTime = (heldPosMark.buy_date && visSet.has(heldPosMark.buy_date)) ? heldPosMark.buy_date : activeCandles[activeCandles.length - 1].time;
+            vcpMarks.push({ time: buyTime, position: "belowBar", color: "#047857", shape: "arrowUp", text: `★ 내 매수 $${heldPosMark.avg_entry.toFixed(2)} (${heldPosMark.shares}주)` });
           }
           vcpMarks.sort((a, b) => a.time.localeCompare(b.time));
           if (vcpMarks.length) mainSeries.setMarkers(vcpMarks);
@@ -3025,9 +3085,12 @@ python -m unittest discover -s tests -v</pre>
         const planBadge = rem2nd > 0
           ? `<span class="px-2 py-0.5 rounded-lg text-[11px] font-bold bg-blue-50 text-blue-700 border border-blue-200">2차 ${rem2nd}주 추가예정 (목표 ${p.planned_shares}주)</span>`
           : "";
-        const realizedBadge = p.realized_shares > 0
-          ? `<span class="px-2 py-0.5 rounded-lg text-[11px] font-bold bg-purple-50 text-purple-700 border border-purple-200">누적 일부익절 ${p.realized_shares}주 (+$${(p.realized_pnl_usd || 0).toFixed(1)})</span>`
+        const autoBadge = p.auto_raised_msg
+          ? `<span class="px-2 py-0.5 rounded-lg text-[11px] font-semibold bg-amber-50 text-amber-800 border border-amber-200">⚡ ${p.auto_raised_msg}</span>`
           : "";
+        const realizedBadge = (p.realized_shares > 0
+          ? `<span class="px-2 py-0.5 rounded-lg text-[11px] font-bold bg-purple-50 text-purple-700 border border-purple-200">누적 일부익절 ${p.realized_shares}주 (+$${(p.realized_pnl_usd || 0).toFixed(1)})</span>`
+          : "") + autoBadge;
 
         const text2R = p.shares === 1
           ? `1주 전량 익절 또는 보호선 +1R`
@@ -3312,7 +3375,9 @@ python -m unittest discover -s tests -v</pre>
       if (openPositions.length >= 4) { showToast("최대 보유 종목(4개) 한도에 도달했습니다"); return; }
       const plan = calculateRiskPlanUI();
       if (!plan || plan.tranche <= 0) { showToast("유효한 진입 수량이 아닙니다"); return; }
-      openPositions.push({ ticker: plan.ticker, shares: plan.tranche, planned_shares: plan.totalShares || plan.tranche, avg_entry: plan.entry, current_price: plan.entry, initial_stop: plan.stop, stop_price: plan.stop, stop_source: "VALIDATED_TECHNICAL_STOP", price_date: currentTradeDate, realized_pnl_usd: 0, realized_shares: 0 });
+      const _buyStock = stocks.find(x => x.ticker === plan.ticker);
+      const _buyDate = (_buyStock && Array.isArray(_buyStock.dates) && _buyStock.dates.length) ? _buyStock.dates[_buyStock.dates.length - 1] : new Date().toISOString().slice(0, 10);
+      openPositions.push({ ticker: plan.ticker, shares: plan.tranche, planned_shares: plan.totalShares || plan.tranche, avg_entry: plan.entry, current_price: plan.entry, initial_stop: plan.stop, stop_price: plan.stop, stop_source: "VALIDATED_TECHNICAL_STOP", price_date: currentTradeDate, buy_date: _buyDate, realized_pnl_usd: 0, realized_shares: 0 });
       showToast(`${plan.ticker} ${plan.tranche}주 1차 편입 완료`);
       renderDashboard();
       switchTab("positions");
@@ -3678,6 +3743,8 @@ python -m unittest discover -s tests -v</pre>
       currentTradeDate = parsed.trade_date || "최신 종가";
       syncOpenPositionsPrices(currentTradeDate);
       document.getElementById("data-mode-badge").textContent = `실제 파이프라인 데이터 (${stocks.length}종목 · ${parsed.trade_date || "최신"})`;
+      const updBadge = document.getElementById("last-updated-badge");
+      if (updBadge) updBadge.textContent = `업데이트: ${formatUpdateTimestamp(parsed.generated_at || null)}`;
       document.getElementById("data-mode-badge").className = "px-2 py-0.5 rounded-full text-[11px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200";
       state.selectedTicker = stocks[0].ticker;
       document.getElementById("rp-ticker").value = stocks[0].ticker;

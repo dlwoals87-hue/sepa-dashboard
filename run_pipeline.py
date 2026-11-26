@@ -569,6 +569,7 @@ def run_sepa_pipeline(finviz_filters: Dict[str, str] = None, max_universe: int =
     payload = {
         "schema_version": "2.0.0",
         "trade_date": trade_date,
+        "generated_at": datetime.now(timezone.utc).isoformat(),
         "data_policy": DATA_POLICY,
         "market_regime": regime,
         "universe_stats": {
