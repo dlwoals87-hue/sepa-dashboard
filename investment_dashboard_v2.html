@@ -611,67 +611,112 @@
     </section>
 
     <!-- ==================== TAB 5: TRADE PLAN (RISK ENGINE) ==================== -->
-    <section id="tab-tradeplan" class="tab-panel hidden space-y-5">
-      <div class="grid grid-cols-1 lg:grid-cols-12 gap-5">
-        <div class="lg:col-span-5 bg-white border border-slate-200 rounded-2xl p-5 shadow-sm space-y-3">
-          <h2 class="text-base font-bold text-slate-900">결정론적 위험·수량 계산기</h2>
-          <p class="text-xs text-slate-500">1회 허용위험 0.5% (하드 상한 1.0%) · 최대 초기 손절폭 7.0%</p>
-          <div class="grid grid-cols-2 gap-3 text-xs">
-            <div>
-              <label class="block text-slate-600 mb-1">종목 티커</label>
-              <input id="rp-ticker" type="text" value="NVDA" class="w-full px-2.5 py-1.5 border border-slate-300 rounded-lg font-bold" />
+    <section id="tab-tradeplan" class="tab-panel hidden space-y-4">
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-4 items-start">
+        <!-- Left: Compact Inputs + R-Multiple Guide (fills left column cleanly) -->
+        <div class="lg:col-span-4 space-y-3">
+          <div class="bg-white border border-slate-200 rounded-2xl p-4 shadow-sm space-y-2.5">
+            <div class="flex items-center justify-between">
+              <h2 class="text-sm font-bold text-slate-900">매매 계획 입력 (티커 · 금액)</h2>
+              <span class="text-[10px] font-semibold text-slate-500">자동 실시간 계산</span>
             </div>
-            <div>
-              <label class="block text-slate-600 mb-1">매수 예정가 ($)</label>
-              <input id="rp-entry" type="number" step="0.01" value="100" class="w-full px-2.5 py-1.5 border border-slate-300 rounded-lg tabular-nums" />
+            <div class="grid grid-cols-2 gap-2.5 text-xs">
+              <div>
+                <label class="block text-[11px] text-slate-600 mb-0.5">종목 티커</label>
+                <input id="rp-ticker" type="text" value="NVDA" class="w-full px-2.5 py-1.5 border border-slate-300 rounded-lg font-bold uppercase" />
+              </div>
+              <div>
+                <label class="block text-[11px] text-slate-600 mb-0.5">매수 예정가 ($)</label>
+                <input id="rp-entry" type="number" step="0.01" value="100" class="w-full px-2.5 py-1.5 border border-slate-300 rounded-lg tabular-nums" />
+              </div>
+              <div>
+                <label class="block text-[11px] text-slate-600 mb-0.5">손절가 ($) <span id="rp-stop-pct-lbl" class="text-rose-600 font-bold">(-7.0%)</span></label>
+                <input id="rp-tech-stop" type="number" step="0.01" value="93" class="w-full px-2.5 py-1.5 border border-slate-300 rounded-lg tabular-nums" />
+              </div>
+              <div>
+                <label class="block text-[11px] text-slate-600 mb-0.5">적용 환율 (원/$)</label>
+                <input id="rp-fx" type="number" step="10" value="1400" class="w-full px-2.5 py-1.5 border border-slate-300 rounded-lg tabular-nums" />
+              </div>
+              <div class="col-span-2">
+                <div class="flex items-center justify-between mb-0.5">
+                  <label class="text-[11px] font-semibold text-slate-700">내 총 투자자산 (원)</label>
+                  <span id="rp-equity-kr" class="text-[11px] font-bold text-indigo-700">일천만원</span>
+                </div>
+                <input id="rp-equity" type="text" inputmode="numeric" value="10,000,000" class="w-full px-2.5 py-1.5 border border-slate-300 rounded-lg tabular-nums font-semibold" />
+              </div>
+              <div class="col-span-2">
+                <div class="flex items-center justify-between mb-0.5">
+                  <label class="text-[11px] font-semibold text-slate-700">이 종목 최대 투자한도 (원 · 선택)</label>
+                  <span id="rp-budget-kr" class="text-[11px] font-bold text-emerald-700">자동(총자산 25%)</span>
+                </div>
+                <input id="rp-stock-budget" type="text" inputmode="numeric" placeholder="비우면 총 투자자산의 25% 자동 적용" value="" class="w-full px-2.5 py-1.5 border border-slate-300 rounded-lg tabular-nums" />
+              </div>
+              <div class="col-span-2">
+                <div class="flex items-center justify-between mb-0.5">
+                  <label class="text-[11px] font-semibold text-slate-700">1회 허용위험 (% · 최대 1.0%)</label>
+                  <span class="text-[10px] text-slate-500">권장 0.5%</span>
+                </div>
+                <input id="rp-risk-pct" type="number" step="0.1" value="0.5" class="w-full px-2.5 py-1.5 border border-slate-300 rounded-lg tabular-nums" />
+                <p class="text-[10px] text-slate-500 mt-1 leading-snug">※ 왜 0.5~1.0%인가요? 손절할 때마다 내 총 투자자산의 0.5%만 잃도록 막아두면, <strong>10번 연속 틀려도 계좌의 95%가 남아</strong> 다음 주도주로 바로 복구할 수 있습니다.</p>
+              </div>
             </div>
-            <div>
-              <label class="block text-slate-600 mb-1">기술적 손절가 ($ · 선택)</label>
-              <input id="rp-tech-stop" type="number" step="0.01" value="93" class="w-full px-2.5 py-1.5 border border-slate-300 rounded-lg tabular-nums" />
-            </div>
-            <div>
-              <label class="block text-slate-600 mb-1">1회 허용위험 (%)</label>
-              <input id="rp-risk-pct" type="number" step="0.1" value="0.5" class="w-full px-2.5 py-1.5 border border-slate-300 rounded-lg tabular-nums" />
-            </div>
-            <div>
-              <label class="block text-slate-600 mb-1">계좌 평가자산 (원)</label>
-              <input id="rp-equity" type="number" step="100000" value="10000000" class="w-full px-2.5 py-1.5 border border-slate-300 rounded-lg tabular-nums" />
-            </div>
-            <div>
-              <label class="block text-slate-600 mb-1">적용 환율 (원/$)</label>
-              <input id="rp-fx" type="number" step="10" value="1400" class="w-full px-2.5 py-1.5 border border-slate-300 rounded-lg tabular-nums" />
+            <div class="flex gap-2 pt-1">
+              <button id="btn-calc-risk" type="button" class="px-3 py-2 rounded-xl text-xs font-semibold bg-slate-100 text-slate-700 hover:bg-slate-200 border border-slate-200">초기화</button>
+              <button id="btn-add-position" type="button" class="flex-1 py-2 rounded-xl text-xs font-semibold bg-emerald-600 text-white hover:bg-emerald-700">6. 보유종목에 1차 매수 등록 →</button>
             </div>
           </div>
-          <div class="flex gap-2 pt-2">
-            <button id="btn-calc-risk" class="flex-1 py-2 rounded-xl text-xs font-semibold bg-slate-900 text-white hover:bg-slate-800">수량 재계산</button>
-            <button id="btn-add-position" class="flex-1 py-2 rounded-xl text-xs font-semibold bg-emerald-600 text-white hover:bg-emerald-700">포지션 편입 (1차 50%)</button>
+
+          <!-- Beginner R-Multiple Guide (Eliminates left-bottom whitespace) -->
+          <div class="bg-indigo-50/70 border border-indigo-200 rounded-2xl p-3.5 text-[11px] text-indigo-950 space-y-1.5 leading-relaxed">
+            <div class="font-bold text-xs">초보자를 위한 'R(위험 단위)' 운영 원리</div>
+            <p><strong>• 1R이란?</strong> 내가 정한 <strong>초기 손절폭(예: -7%)</strong>을 1배(1R)로 부릅니다. 손절폭의 1배 오르면 <strong>+1R</strong>, 2배 오르면 <strong>+2R</strong>, 3배 오르면 <strong>+3R</strong>입니다.</p>
+            <p><strong>• 딱 3R까지만 보나요? 아닙니다!</strong> 미너비니는 평균 수익 구간인 <strong>+2R~+3R(+14~21%)</strong>에서 일부를 익절해 수익을 챙긴 뒤, 남은 물량은 <strong>+4R·+5R·+10R(+50~100%↑)까지 10·20일선을 타고 끝까지 보유</strong>합니다.</p>
           </div>
         </div>
 
-        <div class="lg:col-span-7 bg-white border border-slate-200 rounded-2xl p-5 shadow-sm space-y-4">
-          <div class="flex items-center justify-between">
-            <h3 class="text-sm font-bold text-slate-900">산출 결과 &amp; 하드 리스크 검증</h3>
-            <span id="rp-status-badge" class="px-2.5 py-1 rounded-lg text-xs font-bold bg-emerald-50 text-emerald-700">OK</span>
+        <!-- Right: Ordered Summary Strip (4 cards in 1 row) + Complete 1R/2R/3R/4R+ Roadmap -->
+        <div class="lg:col-span-8 bg-white border border-slate-200 rounded-2xl p-4 shadow-sm space-y-3">
+          <div class="flex flex-wrap items-center justify-between gap-2">
+            <div class="flex items-center gap-2">
+              <h3 class="text-sm font-bold text-slate-900">매매 계획 산출 결과</h3>
+              <span id="rp-plan-price-note" class="text-[11px] text-slate-500">티커 입력 시 최종 종가 자동 세팅</span>
+            </div>
+            <span id="rp-status-badge" class="px-2.5 py-1 rounded-lg text-xs font-bold bg-emerald-50 text-emerald-700">진입 가능 (리스크 기준 충족)</span>
           </div>
-          <div class="grid grid-cols-2 sm:grid-cols-3 gap-3 text-xs">
-            <div class="p-3 rounded-xl bg-slate-50"><div class="text-slate-500">유효 손절가</div><div id="rp-out-stop" class="text-base font-bold text-slate-900 tabular-nums mt-0.5">$93.00</div></div>
-            <div class="p-3 rounded-xl bg-slate-50"><div class="text-slate-500">손절폭 (%)</div><div id="rp-out-dist" class="text-base font-bold text-slate-900 tabular-nums mt-0.5">7.0%</div></div>
-            <div class="p-3 rounded-xl bg-slate-50"><div class="text-slate-500">허용 손실금</div><div id="rp-out-loss" class="text-base font-bold text-slate-900 tabular-nums mt-0.5">50,000원</div></div>
-            <div class="p-3 rounded-xl bg-blue-50 border border-blue-200"><div class="text-blue-700">위험기준 최대수량</div><div id="rp-out-shares" class="text-lg font-bold text-blue-900 tabular-nums mt-0.5">5주</div></div>
-            <div class="p-3 rounded-xl bg-emerald-50 border border-emerald-200"><div class="text-emerald-700">1차 투입 수량 (50%)</div><div id="rp-out-tranche" class="text-lg font-bold text-emerald-900 tabular-nums mt-0.5">2주</div></div>
-            <div class="p-3 rounded-xl bg-slate-50"><div class="text-slate-500">매수 예정 금액 (비중)</div><div id="rp-out-val" class="text-base font-bold text-slate-900 tabular-nums mt-0.5">700,000원</div></div>
+
+          <!-- Ordered Flow: 1. Buy Amount -> 2. Shares (1st/2nd) -> 3. Stop Loss -> 4. Max Risk (1R) -->
+          <div class="grid grid-cols-2 sm:grid-cols-4 gap-2.5 text-xs">
+            <div class="p-2.5 rounded-xl bg-indigo-50/70 border border-indigo-200">
+              <div class="text-[11px] text-indigo-800 font-semibold">① 매수 예정 금액</div>
+              <div id="rp-out-val" class="text-sm font-bold text-indigo-950 tabular-nums mt-0.5">-</div>
+            </div>
+            <div class="p-2.5 rounded-xl bg-emerald-50/70 border border-emerald-200">
+              <div class="text-[11px] text-emerald-800 font-semibold">② 목표 수량 (1차/2차)</div>
+              <div id="rp-out-shares" class="text-sm font-bold text-emerald-950 tabular-nums mt-0.5">-</div>
+              <div id="rp-out-tranche" class="text-[10px] text-emerald-700 tabular-nums">-</div>
+            </div>
+            <div class="p-2.5 rounded-xl bg-rose-50/70 border border-rose-200">
+              <div class="text-[11px] text-rose-800 font-semibold">③ 손절가 · 손절폭</div>
+              <div id="rp-out-stop" class="text-sm font-bold text-rose-950 tabular-nums mt-0.5">-</div>
+              <div id="rp-out-dist" class="text-[10px] text-rose-700 tabular-nums">-</div>
+            </div>
+            <div class="p-2.5 rounded-xl bg-slate-50 border border-slate-200">
+              <div class="text-[11px] text-slate-600 font-semibold">④ 최대 손실 한도(1R)</div>
+              <div id="rp-out-loss" class="text-sm font-bold text-slate-900 tabular-nums mt-0.5">-</div>
+            </div>
           </div>
-          <div class="p-3 rounded-xl bg-amber-50 border border-amber-200 text-xs text-amber-800">
-            <strong>주의:</strong> 손절가 지정이 시장 갭 하락 시 해당 가격 체결을 보장하지 않으며, 실제 손실은 허용 손실금을 초과할 수 있습니다.
-          </div>
-          <div class="p-4 rounded-xl bg-slate-50 border border-slate-200 space-y-2.5">
+
+          <div class="p-3 rounded-xl bg-slate-50 border border-slate-200 space-y-2">
             <div class="flex flex-wrap items-center justify-between gap-2">
-              <h4 class="text-xs font-bold text-slate-900">미너비니 1R · 2R · 3R 기계적 매수·손절·익절 풀 플랜</h4>
-              <span id="rp-plan-price-note" class="text-[11px] text-slate-500">티커 입력 시 최근 종가로 자동 세팅</span>
+              <h4 class="text-xs font-bold text-slate-900">미너비니 기계적 단계별 실행 플랜 (진입 → -1R 손절 → +1R · +2R · +3R · 4R+ 추세추종)</h4>
             </div>
-            <div id="rp-r-plan-body" class="text-[11px] text-slate-700 space-y-1.5 leading-relaxed">
-              티커와 총 투자금액을 입력하면 1차/2차 매수, 손절가, +1R/+2R/+3R 목표가와 행동 지침이 자동 계산됩니다.
+            <div id="rp-r-plan-body" class="text-[11px] text-slate-700 space-y-1.5 leading-snug">
+              티커와 투자금액을 입력하면 단계별 매매 플랜이 표시됩니다.
             </div>
+          </div>
+
+          <div class="px-3 py-2 rounded-xl bg-amber-50 border border-amber-200 text-[11px] text-amber-800">
+            <strong>주의:</strong> 손절가 지정이 시장 갭 하락 시 해당 가격 체결을 보장하지 않으며, 실제 손실은 허용 손실금을 초과할 수 있습니다.
           </div>
         </div>
       </div>
@@ -2570,6 +2615,24 @@ python -m unittest discover -s tests -v</pre>
       }).join("");
     }
 
+    function parseKrwInput(str) {
+      const n = Number(String(str || "").replace(/[^0-9]/g, ""));
+      return isNaN(n) ? 0 : n;
+    }
+
+    function formatKrwWords(num) {
+      const n = Math.floor(Number(num || 0));
+      if (n <= 0) return "0원";
+      const eok = Math.floor(n / 100000000);
+      const man = Math.floor((n % 100000000) / 10000);
+      const rem = n % 10000;
+      const parts = [];
+      if (eok > 0) parts.push(`${eok.toLocaleString()}억`);
+      if (man > 0) parts.push(`${man.toLocaleString()}만`);
+      if (rem > 0 && eok === 0) parts.push(`${rem.toLocaleString()}`);
+      return (parts.join(" ") || "0") + "원";
+    }
+
     function calcSafe7Stop(entry) {
       return entry > 0 ? +(Math.ceil(entry * 0.93 * 100) / 100).toFixed(2) : 0;
     }
@@ -2583,7 +2646,7 @@ python -m unittest discover -s tests -v</pre>
         document.getElementById("rp-entry").value = ep.toFixed(2);
         document.getElementById("rp-tech-stop").value = calcSafe7Stop(ep).toFixed(2);
         const noteEl = document.getElementById("rp-plan-price-note");
-        if (noteEl) noteEl.textContent = `${s.ticker} 최종 종가 $${ep.toFixed(2)} 기준 자동 세팅`;
+        if (noteEl) noteEl.textContent = `${s.ticker} 최종 종가 $${ep.toFixed(2)} 자동 세팅`;
       }
       calculateRiskPlanUI();
       switchTab("tradeplan");
@@ -2597,9 +2660,9 @@ python -m unittest discover -s tests -v</pre>
         const ep = Number(s.price);
         document.getElementById("rp-entry").value = ep.toFixed(2);
         document.getElementById("rp-tech-stop").value = calcSafe7Stop(ep).toFixed(2);
-        if (noteEl) noteEl.textContent = `${s.ticker} 최종 종가 $${ep.toFixed(2)} 기준 자동 세팅`;
+        if (noteEl) noteEl.textContent = `${s.ticker} 최종 종가 $${ep.toFixed(2)} 자동 세팅`;
       } else if (noteEl) {
-        noteEl.textContent = sym ? `${sym} 직접 입력 모드` : "티커 입력 시 최근 종가로 자동 세팅";
+        noteEl.textContent = sym ? `${sym} 직접 입력 모드` : "티커 입력 시 최종 종가 자동 세팅";
       }
       calculateRiskPlanUI();
     }
@@ -2610,8 +2673,16 @@ python -m unittest discover -s tests -v</pre>
       const techStopVal = document.getElementById("rp-tech-stop").value;
       const techStop = techStopVal ? Number(techStopVal) : null;
       let riskPct = Number(document.getElementById("rp-risk-pct").value || 0.5);
-      const equity = Number(document.getElementById("rp-equity").value || 10000000);
+      const equity = parseKrwInput(document.getElementById("rp-equity").value) || 10000000;
+      const budgetRaw = parseKrwInput(document.getElementById("rp-stock-budget")?.value);
+      const stockBudget = budgetRaw > 0 ? Math.min(budgetRaw, equity) : Math.round(equity * 0.25);
       const fx = Number(document.getElementById("rp-fx").value || 1400);
+
+      // Update Korean readable amount labels
+      const eqKr = document.getElementById("rp-equity-kr");
+      if (eqKr) eqKr.textContent = formatKrwWords(equity);
+      const bgKr = document.getElementById("rp-budget-kr");
+      if (bgKr) bgKr.textContent = budgetRaw > 0 ? formatKrwWords(stockBudget) : `자동 25% (${formatKrwWords(stockBudget)})`;
 
       let clamped = false;
       if (riskPct > 1.0) { riskPct = 1.0; clamped = true; }
@@ -2619,10 +2690,12 @@ python -m unittest discover -s tests -v</pre>
       const distPct = entry > 0 ? +(((entry - stop) / entry) * 100).toFixed(2) : 0;
       const allowedLoss = equity * (riskPct / 100);
 
-      // Always refresh output boxes first so stale previous-ticker values never linger
+      const stopPctLbl = document.getElementById("rp-stop-pct-lbl");
+      if (stopPctLbl) stopPctLbl.textContent = entry > 0 ? `(-${distPct}%)` : "(-)";
+
       document.getElementById("rp-out-stop").textContent = entry > 0 ? `$${stop.toFixed(2)}` : "-";
-      document.getElementById("rp-out-dist").textContent = entry > 0 ? `${distPct}%` : "-";
-      document.getElementById("rp-out-loss").textContent = `${Math.round(allowedLoss).toLocaleString()}원`;
+      document.getElementById("rp-out-dist").textContent = entry > 0 ? `-${distPct}% (최대 7% 이내)` : "-";
+      document.getElementById("rp-out-loss").textContent = `${Math.round(allowedLoss).toLocaleString()}원 (${riskPct}%)`;
 
       const badge = document.getElementById("rp-status-badge");
       const rBody = document.getElementById("rp-r-plan-body");
@@ -2630,7 +2703,7 @@ python -m unittest discover -s tests -v</pre>
         badge.textContent = "입력 오류 (손절가는 매수가보다 낮아야 함)";
         badge.className = "px-2.5 py-1 rounded-lg text-xs font-bold bg-rose-100 text-rose-700";
         document.getElementById("rp-out-shares").textContent = "0주";
-        document.getElementById("rp-out-tranche").textContent = "0주";
+        document.getElementById("rp-out-tranche").textContent = "1차 0주 / 2차 0주";
         document.getElementById("rp-out-val").textContent = "0원";
         if (rBody) rBody.innerHTML = `<div class="text-rose-600 font-semibold">매수 예정가($${entry})는 손절가($${stop})보다 높아야 합니다.</div>`;
         return null;
@@ -2639,7 +2712,7 @@ python -m unittest discover -s tests -v</pre>
         badge.textContent = `손절폭 초과 (${distPct}% · 최대 7% 이내로 조정 필요)`;
         badge.className = "px-2.5 py-1 rounded-lg text-xs font-bold bg-rose-100 text-rose-700";
         document.getElementById("rp-out-shares").textContent = "0주 (손절폭 초과)";
-        document.getElementById("rp-out-tranche").textContent = "0주";
+        document.getElementById("rp-out-tranche").textContent = "1차 0주 / 2차 0주";
         document.getElementById("rp-out-val").textContent = "0원";
         const minStop = calcSafe7Stop(entry).toFixed(2);
         if (rBody) rBody.innerHTML = `<div class="text-rose-600 font-semibold">초기 손절폭(${distPct}%)이 미너비니 최대 허용 한도(7.0%)를 넘었습니다. 손절가를 <strong>$${minStop} 이상</strong>으로 올려 주세요.</div>`;
@@ -2648,10 +2721,10 @@ python -m unittest discover -s tests -v</pre>
 
       const rPerShare = entry - stop;
       const riskPerShareKrw = rPerShare * fx;
-      let shares = Math.floor(allowedLoss / riskPerShareKrw);
-      // Cap total position value to 100% of account equity just in case stop is ultra-tight
-      const maxAffordable = Math.floor(equity / (entry * fx));
-      if (shares > maxAffordable) shares = maxAffordable;
+      const sharesByRisk = Math.floor(allowedLoss / riskPerShareKrw);
+      const sharesByBudget = Math.floor(stockBudget / (entry * fx));
+      const shares = Math.max(0, Math.min(sharesByRisk, sharesByBudget));
+      const limitedByBudget = sharesByBudget < sharesByRisk;
 
       const tranche = Math.max(shares >= 2 ? Math.floor(shares * 0.5) : shares, 0);
       const tranche2 = Math.max(0, shares - tranche);
@@ -2659,21 +2732,21 @@ python -m unittest discover -s tests -v</pre>
       const posWeight = equity > 0 ? ((posVal / equity) * 100).toFixed(1) : "0.0";
 
       badge.textContent = shares === 0
-        ? "자금 대비 1주 매수 부족 (위험% 또는 자금 확인)"
-        : clamped ? "진입 가능 (1회 손실 상한 1.0% 자동 적용)" : "진입 가능 (리스크 기준 충족)";
+        ? "자금/한도 대비 1주 매수 부족"
+        : clamped ? "진입 가능 (1회 손실 상한 1.0% 적용)" : "진입 가능 (리스크 기준 충족)";
       badge.className = `px-2.5 py-1 rounded-lg text-xs font-bold ${shares === 0 ? "bg-amber-100 text-amber-800" : clamped ? "bg-amber-100 text-amber-800" : "bg-emerald-50 text-emerald-700"}`;
 
-      document.getElementById("rp-out-shares").textContent = `${shares}주`;
-      document.getElementById("rp-out-tranche").textContent = `${tranche}주`;
+      document.getElementById("rp-out-shares").textContent = `총 ${shares}주`;
+      document.getElementById("rp-out-tranche").textContent = `1차 ${tranche}주 · 2차 ${tranche2}주`;
       document.getElementById("rp-out-val").textContent = `${posVal.toLocaleString()}원 (${posWeight}%)`;
 
       if (rBody) {
         if (shares === 0) {
-          const minEq = Math.ceil((riskPerShareKrw / (riskPct / 100)) / 10000) * 10000;
+          const minNeeded = Math.max(Math.ceil(entry * fx), Math.ceil((riskPerShareKrw / (riskPct / 100)) / 10000) * 10000);
           rBody.innerHTML = `
             <div class="p-2.5 rounded-lg bg-amber-50 border border-amber-200 text-amber-950">
-              <strong>왜 0주인가요?</strong> 총 투자금(${Math.round(equity).toLocaleString()}원)의 ${riskPct}% 허용 손실금(<strong>${Math.round(allowedLoss).toLocaleString()}원</strong>)이 1주 손절 시 손실액(<strong>${Math.round(riskPerShareKrw).toLocaleString()}원</strong>)보다 작기 때문입니다.<br>
-              → 1주 이상 매수하려면 계좌 자산을 <strong>약 ${minEq.toLocaleString()}원 이상</strong>으로 입력하거나, 1회 허용위험을 <strong>1.0%</strong>로 올려 보세요.
+              <strong>왜 0주인가요?</strong> ${limitedByBudget ? `종목 투자한도(${stockBudget.toLocaleString()}원)가 1주 가격(${Math.round(entry * fx).toLocaleString()}원)보다 작거나,` : `허용 손실금(${Math.round(allowedLoss).toLocaleString()}원)이 1주 손절액(${Math.round(riskPerShareKrw).toLocaleString()}원)보다 작기 때문입니다.`}
+              최소 1주 이상 매수하려면 자금/한도를 <strong>약 ${minNeeded.toLocaleString()}원 이상</strong>으로 조정하거나 1회 허용위험을 <strong>1.0%</strong>로 올려 보세요.
             </div>`;
           return null;
         }
@@ -2687,28 +2760,28 @@ python -m unittest discover -s tests -v</pre>
         const remAfter2R = Math.max(0, shares - sell13);
         const sell2nd = remAfter2R >= 2 ? sell13 : 0;
         const remAfter3R = Math.max(0, remAfter2R - sell2nd);
+        const actualMaxLoss = Math.round(shares * riskPerShareKrw);
 
         rBody.innerHTML = `
-          <div class="p-2.5 rounded-lg bg-white border border-slate-200">
-            <strong>① 매수 실행 (${ticker || "-"} · 총 투자금 ${Math.round(equity).toLocaleString()}원 중 ${posWeight}% 투입):</strong><br>
-            • 총 목표 수량: <strong>${shares}주</strong> (${posVal.toLocaleString()}원 · 주당 위험 $${rPerShare.toFixed(2)} = ${Math.round(riskPerShareKrw).toLocaleString()}원)<br>
-            • <strong>1차 매수:</strong> <strong>${tranche}주</strong> ($${entry.toFixed(2)}) 먼저 진입 → <strong>2차 추가 매수:</strong> ${tranche2 > 0 ? `<strong>${tranche2}주</strong> (당일 종가가 매수가 위에서 마감하거나 다음날 피벗 지지 확인 시 추가)` : "1주~소액이라 1차로 전량 진입"}
+          <div class="p-2 rounded-lg bg-white border border-slate-200">
+            <strong>① 분할 매수 (${ticker || "-"} · 총 자산의 ${posWeight}% = ${posVal.toLocaleString()}원):</strong>
+            총 <strong>${shares}주</strong> 중 <strong>1차 ${tranche}주</strong>($${entry.toFixed(2)}) 먼저 매수 → 당일 종가 안착 또는 다음날 피벗 지지 확인 시 <strong>2차 ${tranche2}주</strong> 추가${limitedByBudget ? ` <span class="text-indigo-700">(종목 한도 ${stockBudget.toLocaleString()}원 기준 맞춤)</span>` : ""}
           </div>
-          <div class="p-2.5 rounded-lg bg-rose-50/70 border border-rose-200 text-rose-950">
-            <strong>② 하락 시 기계적 손절 (-1R · $${stop.toFixed(2)}, -${distPct}%):</strong><br>
-            • 주가가 <strong>$${stop.toFixed(2)}</strong>에 닿으면 보유 전량(${shares}주)을 <strong>예외 없이 즉시 매도</strong>합니다. (예상 최대 손실 약 ${Math.round(shares * riskPerShareKrw).toLocaleString()}원)
+          <div class="p-2 rounded-lg bg-rose-50/70 border border-rose-200 text-rose-950">
+            <strong>② 하락 시 기계적 손절 (-1R · $${stop.toFixed(2)} / -${distPct}%):</strong>
+            <strong>$${stop.toFixed(2)}</strong> 터치 시 전량(${shares}주) 즉시 손절 → 실제 최대 손실 약 <strong>${actualMaxLoss.toLocaleString()}원</strong>
           </div>
-          <div class="p-2.5 rounded-lg bg-amber-50/70 border border-amber-200 text-amber-950">
-            <strong>③ +1R 도달 시 ($${p1R} · +${pct1R}% 상승):</strong><br>
-            • 매도 없이 보유하며, <strong>손절가를 매수가(본전 $${entry.toFixed(2)})로 즉시 올립니다.</strong> 이 순간부터 잃지 않는 '무손실 거래'가 됩니다.
+          <div class="p-2 rounded-lg bg-amber-50/70 border border-amber-200 text-amber-950">
+            <strong>③ +1R 도달 ($${p1R} · +${pct1R}%↑):</strong>
+            매도 없이 보유하고 <strong>손절가를 매수가(본전 $${entry.toFixed(2)})</strong>로 즉시 상향 → 손실 0원 '무위험 거래' 확정
           </div>
-          <div class="p-2.5 rounded-lg bg-emerald-50/70 border border-emerald-200 text-emerald-950">
-            <strong>④ +2R 도달 시 ($${p2R} · +${pct2R}% 상승):</strong><br>
-            • ${sell13 > 0 ? `<strong>${sell13}주 분할 익절</strong>로 수익을 확정하고,` : "수익 구간 유지하며,"} 남은 ${remAfter2R}주의 <strong>손절가를 +1R($${p1R})로 상향</strong>해 최소 +1R 수익을 잠급니다.
+          <div class="p-2 rounded-lg bg-emerald-50/70 border border-emerald-200 text-emerald-950">
+            <strong>④ +2R 도달 ($${p2R} · +${pct2R}%↑):</strong>
+            ${sell13 > 0 ? `<strong>${sell13}주 분할 익절</strong>로 수익 확정 + ` : ""}남은 ${remAfter2R}주 손절가를 <strong>+1R($${p1R})</strong>로 상향해 수익 잠금
           </div>
-          <div class="p-2.5 rounded-lg bg-indigo-50/70 border border-indigo-200 text-indigo-950">
-            <strong>⑤ +3R 도달 시 ($${p3R} · +${pct3R}% 상승):</strong><br>
-            • ${sell2nd > 0 ? `추가 <strong>${sell2nd}주 익절</strong> 후 ` : ""}잔여 <strong>${remAfter3R}주</strong>는 손절가를 <strong>+2R($${p2R})</strong>로 올리고 <strong>10일선/20일선 종가 이탈 시까지 끝까지 추세 추종</strong>합니다.
+          <div class="p-2 rounded-lg bg-indigo-50/70 border border-indigo-200 text-indigo-950">
+            <strong>⑤ +3R 도달 ($${p3R} · +${pct3R}%↑) &amp; 4R+ 대시세 추종:</strong>
+            ${sell2nd > 0 ? `추가 <strong>${sell2nd}주 익절</strong> 후 ` : ""}잔여 <strong>${remAfter3R}주</strong>는 손절가를 <strong>+2R($${p2R})</strong>로 올리고, <strong>10일선/20일선 종가 이탈 시까지 +4R·+5R·+10R 이상 끝까지 추종</strong>합니다.
           </div>
         `;
       }
@@ -2805,8 +2878,15 @@ python -m unittest discover -s tests -v</pre>
     document.getElementById("btn-goto-plan").addEventListener("click", () => openTradePlanForTicker(state.selectedTicker));
     document.getElementById("rp-ticker").addEventListener("input", e => syncTradePlanFromTicker(e.target.value));
     document.getElementById("rp-ticker").addEventListener("change", e => syncTradePlanFromTicker(e.target.value));
-    ["rp-entry", "rp-tech-stop", "rp-risk-pct", "rp-equity", "rp-fx"].forEach(id => {
+    ["rp-entry", "rp-tech-stop", "rp-risk-pct", "rp-fx"].forEach(id => {
       document.getElementById(id).addEventListener("input", calculateRiskPlanUI);
+    });
+    ["rp-equity", "rp-stock-budget"].forEach(id => {
+      document.getElementById(id).addEventListener("input", e => {
+        const rawNum = parseKrwInput(e.target.value);
+        e.target.value = rawNum > 0 ? rawNum.toLocaleString() : "";
+        calculateRiskPlanUI();
+      });
     });
 
     document.getElementById("mode-sepa-btn").addEventListener("click", () => {
@@ -2907,7 +2987,12 @@ python -m unittest discover -s tests -v</pre>
       renderSetupsTab();
     });
 
-    document.getElementById("btn-calc-risk").addEventListener("click", calculateRiskPlanUI);
+    document.getElementById("btn-calc-risk").addEventListener("click", () => {
+      document.getElementById("rp-risk-pct").value = "0.5";
+      document.getElementById("rp-equity").value = "10,000,000";
+      document.getElementById("rp-stock-budget").value = "";
+      syncTradePlanFromTicker(document.getElementById("rp-ticker").value);
+    });
     document.getElementById("btn-add-position").addEventListener("click", () => {
       if (openPositions.length >= 4) { showToast("최대 보유 종목(4개) 한도에 도달했습니다"); return; }
       const plan = calculateRiskPlanUI();
