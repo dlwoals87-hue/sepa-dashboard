@@ -773,12 +773,13 @@
         </div>
 
         <!-- Position Cards Container -->
-        <div id="pos-tbody" class="space-y-3"></div>
+        <div id="pos-tbody" class="space-y-5"></div>
 
         <!-- Button Guide -->
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-2.5 p-3 rounded-xl bg-slate-50 border border-slate-200 text-[11px] text-slate-700">
-          <div><strong class="text-blue-700">2차·추가매수 체크:</strong> 내 매수가보다 올라서 수익 중(+8% 이상)일 때만 추가 매수(불타기)가 가능한지 확인합니다. (손실 중 물타기 자동 차단)</div>
-          <div><strong class="text-slate-900">매도 완료 (일지 저장):</strong> 주식을 모두 팔았을 때 누르면 보유목록에서 빠지고 <strong>7. 매매 일지</strong>에 수익·손실(R)이 자동 기록됩니다.</div>
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2.5 p-3 rounded-xl bg-slate-50 border border-slate-200 text-[11px] text-slate-700">
+          <div><strong class="text-blue-700">2차·추가매수 체크:</strong> 내 매수가보다 올라서 수익 중(+8% 이상)일 때만 추가 매수(불타기)가 가능한지 확인합니다. (손실 중 물타기 차단)</div>
+          <div><strong class="text-emerald-700">일부 익절 (수량 차감):</strong> +2R·+3R에서 일부 주수(예: 3주)만 팔았을 때 누르세요. 보유 수량은 줄고 판 수익은 <strong>7. 매매 일지</strong>에 바로 저장됩니다.</div>
+          <div><strong class="text-slate-900">매도 완료 (일지 저장):</strong> 남은 주식을 모두 팔았을 때 누르면 보유목록에서 빠지고 <strong>7. 매매 일지</strong>에 최종 기록됩니다.</div>
           <div><strong class="text-rose-700">삭제:</strong> 실수로 잘못 등록했을 때 매매일지에 남기지 않고 목록에서만 바로 지웁니다.</div>
         </div>
       </div>
@@ -1272,6 +1273,85 @@ python -m unittest discover -s tests -v</pre>
     </div>
   </div>
 
+  <!-- Budget Example Modal -->
+  <div id="budget-example-modal" class="fixed inset-0 z-50 hidden items-center justify-center bg-slate-900/50 p-4">
+    <div class="bg-white rounded-2xl max-w-lg w-full p-5 shadow-xl border border-slate-200 space-y-3">
+      <div class="flex items-center justify-between border-b border-slate-100 pb-2.5">
+        <h3 class="text-sm font-bold text-slate-900">왜 100만·250만원을 써도 71만원만 사라고 나오나요?</h3>
+        <button id="btn-close-budget-modal" type="button" class="text-slate-400 hover:text-slate-700 text-lg font-bold px-1">&times;</button>
+      </div>
+      <div class="space-y-2.5 text-xs text-slate-700 leading-relaxed">
+        <p class="bg-indigo-50/70 border border-indigo-200 rounded-xl p-3 text-indigo-950">
+          보통 주식을 살 때는 <em>"이 종목에 100만원 넣어야지"</em> 하고 시작하지만, 미너비니 계산기는 <strong>순서가 정반대</strong>입니다.<br>
+          <strong>"내가 잃어도 되는 돈이 딱 5만원인데, 그럼 몇 주까지 살 수 있지?"</strong>를 먼저 계산합니다.
+        </p>
+        <div class="p-3 rounded-xl bg-slate-50 border border-slate-200 space-y-1">
+          <div class="font-bold text-slate-900">① 지금 FLYW가 71만원만 나오는 이유</div>
+          <p>• 1주 가격이 <strong>32,564원</strong>이고, 손절하면 1주당 <strong>2,268원</strong>을 잃습니다.</p>
+          <p>• 내 허용 손실은 <strong>50,000원</strong>(1,000만원의 0.5%)뿐이므로: <code class="bg-white px-1 py-0.5 rounded border">50,000원 ÷ 2,268원 = 22주</code>만 살 수 있습니다.</p>
+          <p>• 이 22주 가격이 <strong>716,408원</strong>이라서, 한도를 100만원·250만원으로 잡아도 <strong>5만원 손실 제한이 먼저 걸려 71만원에서 멈춥니다.</strong></p>
+        </div>
+        <div class="p-3 rounded-xl bg-emerald-50/70 border border-emerald-200 space-y-1">
+          <div class="font-bold text-emerald-950">② 그럼 '기본 25% (250만원)' 한도는 언제 작동하나요?</div>
+          <p>• 반대로 <strong>1주 14만원($100)</strong>짜리 주식인데 손절가가 바로 코앞인 <strong>13만 8,600원($99)</strong>이라면, 1주당 잃는 돈이 겨우 <strong>1,400원</strong>입니다.</p>
+          <p>• 똑같이 <code class="bg-white px-1 py-0.5 rounded border">50,000원 ÷ 1,400원</code>을 하면 <strong>35주(490만원!)</strong>나 살 수 있어 내 재산 절반을 한 종목에 몰빵하게 됩니다.</p>
+          <p>• 이때 <strong>"아무리 많이 살 수 있어도 25%(250만원) 이상은 절대 못 사게 막자!"</strong>고 작동하는 안전 브레이크입니다.</p>
+        </div>
+      </div>
+      <div class="flex justify-end pt-1">
+        <button id="btn-ok-budget-modal" type="button" class="px-4 py-1.5 rounded-xl text-xs font-semibold bg-indigo-600 text-white hover:bg-indigo-700">이해했어요</button>
+      </div>
+    </div>
+  </div>
+
+
+  <!-- Pyramid / 2nd Buy Guide Modal -->
+  <div id="pyramid-guide-modal" class="fixed inset-0 z-50 hidden items-center justify-center bg-slate-900/50 p-4">
+    <div class="bg-white rounded-2xl max-w-lg w-full p-5 shadow-xl border border-slate-200 space-y-3">
+      <div class="flex items-center justify-between border-b border-slate-100 pb-2.5">
+        <h3 id="pyr-modal-title" class="text-sm font-bold text-slate-900">2차 · 추가매수 판단 가이드</h3>
+        <button id="btn-close-pyr-modal" type="button" class="text-slate-400 hover:text-slate-700 text-lg font-bold px-1">&times;</button>
+      </div>
+      <div id="pyr-modal-body" class="space-y-2.5 text-xs text-slate-700 leading-relaxed"></div>
+      <div class="flex justify-end pt-1">
+        <button id="btn-ok-pyr-modal" type="button" class="px-4 py-1.5 rounded-xl text-xs font-semibold bg-slate-900 text-white hover:bg-slate-800">확인 (닫기)</button>
+      </div>
+    </div>
+  </div>
+
+
+  <!-- Partial Sell Modal -->
+  <div id="partial-sell-modal" class="fixed inset-0 z-50 hidden items-center justify-center bg-slate-900/50 p-4">
+    <div class="bg-white rounded-2xl max-w-md w-full p-5 shadow-xl border border-slate-200 space-y-3">
+      <div class="flex items-center justify-between border-b border-slate-100 pb-2.5">
+        <h3 id="ps-modal-title" class="text-sm font-bold text-slate-900">일부 익절 기록 (수량 차감 + 일지 저장)</h3>
+        <button id="btn-close-ps-modal" type="button" class="text-slate-400 hover:text-slate-700 text-lg font-bold px-1">&times;</button>
+      </div>
+      <div class="space-y-3 text-xs text-slate-700">
+        <div id="ps-modal-info" class="p-2.5 rounded-xl bg-slate-50 border border-slate-200"></div>
+        <div class="grid grid-cols-2 gap-2.5">
+          <div>
+            <label class="block text-[11px] font-semibold text-slate-600 mb-1">판 수량 (주)</label>
+            <input id="ps-qty" type="number" min="1" step="1" class="w-full px-2.5 py-1.5 border border-slate-300 rounded-lg tabular-nums font-bold" />
+          </div>
+          <div>
+            <label class="block text-[11px] font-semibold text-slate-600 mb-1">매도 단가 ($)</label>
+            <input id="ps-price" type="number" step="0.01" class="w-full px-2.5 py-1.5 border border-slate-300 rounded-lg tabular-nums font-bold" />
+          </div>
+        </div>
+        <div id="ps-preview" class="p-2.5 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-950 font-medium"></div>
+        <label id="ps-raise-wrap" class="flex items-center gap-2 text-[11px] text-slate-700 cursor-pointer">
+          <input id="ps-raise-stop" type="checkbox" class="rounded border-slate-300" checked />
+          <span id="ps-raise-label">남은 물량 손절선 자동 상향</span>
+        </label>
+      </div>
+      <div class="flex justify-end gap-2 pt-2 border-t border-slate-100">
+        <button id="btn-cancel-ps-modal" type="button" class="px-3 py-1.5 rounded-xl text-xs font-semibold bg-slate-100 text-slate-700 hover:bg-slate-200">취소</button>
+        <button id="btn-confirm-ps-modal" type="button" class="px-4 py-1.5 rounded-xl text-xs font-semibold bg-emerald-600 text-white hover:bg-emerald-700">일부 익절 저장하기</button>
+      </div>
+    </div>
+  </div>
+
   <script>
     // ==================== DEMO DATASET (SEPA V2.0 SCHEMA) ====================
     function makeSeries(start, end, vol, seed) {
@@ -1311,9 +1391,19 @@ python -m unittest discover -s tests -v</pre>
     let universeStats = { total_scanned: 6330, eligible_count: 1780, sp500_total: 500, ndx100_total: 101 };
     let currentRegimeData = null;
     let watchlist = new Set(["NVDA", "PLTR", "GOOGL"]);
+    let currentTradeDate = "데모 기준";
     let openPositions = [
-      { ticker: "PLTR", shares: 10, avg_entry: 56.0, current_price: 61.8, initial_stop: 52.1, stop_price: 54.0, stop_source: "VALIDATED_TECHNICAL_STOP" }
+      { ticker: "PLTR", shares: 10, avg_entry: 56.0, current_price: 61.8, initial_stop: 52.1, stop_price: 54.0, stop_source: "VALIDATED_TECHNICAL_STOP", price_date: "데모 기준", realized_pnl_usd: 0, realized_shares: 0 }
     ];
+    function syncOpenPositionsPrices(tradeDateLabel) {
+      openPositions.forEach(p => {
+        const s = stocks.find(x => x.ticker === p.ticker);
+        if (s && Number(s.price) > 0) {
+          p.current_price = Number(s.price);
+          p.price_date = tradeDateLabel || currentTradeDate || "최신";
+        }
+      });
+    }
     let journalTrades = [
       { id: "T-001", record_type: "LIVE", ticker: "NVDA", regime: "RISK_ON", setup: "VCP_VALIDATED", entry_price: 112.0, exit_price: 131.6, initial_stop: 104.2, rule_compliant: true, note: "피벗 돌파 거래량 1.65x 확인 후 진입, +2.5R 분할익절" },
       { id: "T-002", record_type: "LIVE", ticker: "AMD", regime: "CAUTION", setup: "VCP_CANDIDATE", entry_price: 158.0, exit_price: 147.0, initial_stop: 147.0, rule_compliant: true, note: "돌파 실패 후 7% 손절선 기계적 준수 (-1.0R)" },
@@ -2837,6 +2927,12 @@ python -m unittest discover -s tests -v</pre>
       }
       const fx = Number(document.getElementById("rp-fx")?.value) || 1400;
       tbody.innerHTML = openPositions.map((p, idx) => {
+        const stockObj = stocks.find(x => x.ticker === p.ticker);
+        const pricesArr = Array.isArray(stockObj?.prices) ? stockObj.prices : null;
+        const sma10 = pricesArr && pricesArr.length >= 10 ? +(pricesArr.slice(-10).reduce((a, b) => a + b, 0) / 10).toFixed(2) : null;
+        const sma20 = pricesArr && pricesArr.length >= 20 ? +(pricesArr.slice(-20).reduce((a, b) => a + b, 0) / 20).toFixed(2) : null;
+        const smaHint = sma10 && sma20 ? `10일선 $${sma10} · 20일선 $${sma20}` : `10·20일선 이탈 시 전량 익절`;
+
         const rUnit = Math.max(0.01, p.avg_entry - p.initial_stop);
         const curRNum = (p.current_price - p.avg_entry) / rUnit;
         const curR = curRNum.toFixed(2);
@@ -2852,11 +2948,12 @@ python -m unittest discover -s tests -v</pre>
         const p1R = +(p.avg_entry + rUnit).toFixed(2);
         const p2R = +(p.avg_entry + rUnit * 2).toFixed(2);
         const p3R = +(p.avg_entry + rUnit * 3).toFixed(2);
+        const p4R = +(p.avg_entry + rUnit * 4).toFixed(2);
         const pct1R = +(((p1R - p.avg_entry) / p.avg_entry) * 100).toFixed(1);
         const pct2R = +(((p2R - p.avg_entry) / p.avg_entry) * 100).toFixed(1);
         const pct3R = +(((p3R - p.avg_entry) / p.avg_entry) * 100).toFixed(1);
+        const pct4R = +(((p4R - p.avg_entry) / p.avg_entry) * 100).toFixed(1);
 
-        // Minervini-style partial profit taking share counts (1/3 at +2R, 1/3 at +3R, remainder rides 10/20 SMA)
         const sell2R = p.shares >= 3 ? Math.floor(p.shares / 3) : (p.shares >= 2 ? 1 : 0);
         const remAfter2R = Math.max(0, p.shares - sell2R);
         const sell3R = remAfter2R >= 2 ? sell2R : 0;
@@ -2869,107 +2966,134 @@ python -m unittest discover -s tests -v</pre>
 
         let actionBadge = "";
         let actionBoxClass = "bg-blue-50 border-blue-200 text-blue-950";
+        let cardAccent = "border-l-4 border-l-indigo-500";
         let suggestedStop = null;
         let suggestedStopLabel = "";
 
         if (p.current_price <= p.stop_price) {
           actionBadge = `🔴 즉시 전량 손절! (${p.shares}주 모두 매도)`;
           actionBoxClass = "bg-rose-50 border-rose-300 text-rose-950";
+          cardAccent = "border-l-4 border-l-rose-500";
+        } else if (curRNum >= 4) {
+          actionBadge = `🚀 +4R(+${pct4R}%) 이상 대시세! 남은 ${p.shares}주는 10·20일선(${smaHint}) 깨질 때까지 끝까지 보유하고 손절선을 +3R($${p3R.toFixed(2)}) 이상으로 올리세요`;
+          actionBoxClass = "bg-purple-50 border-purple-200 text-purple-950";
+          cardAccent = "border-l-4 border-l-purple-600";
+          if (p.stop_price < p3R) { suggestedStop = p3R; suggestedStopLabel = `+3R($${p3R.toFixed(2)})로 손절선 올리기`; }
         } else if (curRNum >= 3) {
-          actionBadge = `🟣 +3R(+${pct3R}%) 돌파! ${sell3R > 0 ? sell3R + "주 추가 익절 후 " : ""}남은 ${remAfter3R}주는 10·20일선 깨질 때까지 보유`;
+          actionBadge = `🟣 +3R(+${pct3R}%) 돌파! ${sell3R > 0 ? sell3R + "주 추가 익절 후 " : ""}남은 ${remAfter3R}주는 ${smaHint} 유지 시 계속 보유`;
           actionBoxClass = "bg-indigo-50 border-indigo-200 text-indigo-950";
+          cardAccent = "border-l-4 border-l-indigo-600";
           if (p.stop_price < p2R) { suggestedStop = p2R; suggestedStopLabel = `+2R($${p2R.toFixed(2)})로 손절선 올리기`; }
         } else if (curRNum >= 2) {
-          actionBadge = `🟢 +2R(+${pct2R}%) 돌파! ${sell2R > 0 ? sell2R + "주 먼저 익절(수익 확정)하고 남은 " + remAfter2R + "주 " : ""}손절선을 +1R($${p1R.toFixed(2)})로 올리세요`;
+          actionBadge = `🟢 +2R(+${pct2R}%) 돌파! ${sell2R > 0 ? sell2R + "주 일부 익절(수익 확정)하고 남은 " + remAfter2R + "주 " : ""}손절선을 +1R($${p1R.toFixed(2)})로 올리세요`;
           actionBoxClass = "bg-emerald-50 border-emerald-200 text-emerald-950";
+          cardAccent = "border-l-4 border-l-emerald-600";
           if (p.stop_price < p1R) { suggestedStop = p1R; suggestedStopLabel = `+1R($${p1R.toFixed(2)})로 손절선 올리기`; }
         } else if (curRNum >= 1) {
           actionBadge = `🟡 +1R(+${pct1R}%) 돌파! 매도 없이 보유하고 손절선만 매수가($${p.avg_entry.toFixed(2)})로 올리세요`;
           actionBoxClass = "bg-amber-50 border-amber-200 text-amber-950";
+          cardAccent = "border-l-4 border-l-amber-500";
           if (p.stop_price < p.avg_entry) { suggestedStop = +p.avg_entry.toFixed(2); suggestedStopLabel = `본전($${p.avg_entry.toFixed(2)})으로 손절선 올리기`; }
         } else if (curRNum >= 0) {
           actionBadge = `🔵 보유 유지 · $${p1R.toFixed(2)}(+1R / +${pct1R}%) 도달 시 손절선 본전 이동`;
+          cardAccent = "border-l-4 border-l-sky-500";
         } else {
           actionBadge = `🟠 주의 구간 · 추가매수 금지, $${p.stop_price.toFixed(2)} 닿으면 ${p.shares}주 즉시 손절`;
           actionBoxClass = "bg-orange-50 border-orange-200 text-orange-950";
+          cardAccent = "border-l-4 border-l-orange-500";
         }
 
         const stopText = isBreakevenOrHigher
           ? `손절 시 <strong>+${Math.abs(stopLossKrw).toLocaleString()}원</strong> (무손실 확보)`
           : `손절 시 <strong>${stopLossUsd.toFixed(1)}$ (약 ${stopLossKrw.toLocaleString()}원)</strong>`;
 
+        const realizedBadge = p.realized_shares > 0
+          ? `<span class="px-2 py-0.5 rounded-lg text-[11px] font-bold bg-purple-50 text-purple-700 border border-purple-200">누적 일부익절 ${p.realized_shares}주 (+$${(p.realized_pnl_usd || 0).toFixed(1)})</span>`
+          : "";
+
         return `
-          <div class="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm space-y-3">
-            <!-- Top Row: Ticker + Buttons -->
-            <div class="flex flex-wrap items-center justify-between gap-2">
+          <div class="rounded-2xl border-2 border-slate-300 ${cardAccent} bg-white shadow-md overflow-hidden">
+            <!-- Distinct Tinted Top Header Bar -->
+            <div class="bg-slate-100/80 border-b border-slate-200 px-4 py-3 flex flex-wrap items-center justify-between gap-2">
               <div class="flex flex-wrap items-center gap-2">
+                <span class="px-2 py-0.5 rounded-md text-[11px] font-extrabold bg-slate-900 text-white">종목 #${idx + 1}</span>
                 <span class="text-base font-extrabold text-slate-900">${p.ticker}</span>
-                <span class="px-2 py-0.5 rounded-lg text-xs font-bold bg-slate-100 text-slate-800 tabular-nums">${p.shares}주 보유</span>
-                <span class="px-2 py-0.5 rounded-lg text-xs font-bold tabular-nums ${curRNum >= 0 ? "bg-emerald-50 text-emerald-700" : "bg-rose-50 text-rose-700"}">
+                <span class="px-2 py-0.5 rounded-lg text-xs font-bold bg-white border border-slate-300 text-slate-800 tabular-nums">${p.shares}주 보유</span>
+                <span class="px-2 py-0.5 rounded-lg text-xs font-bold tabular-nums ${curRNum >= 0 ? "bg-emerald-100 text-emerald-800" : "bg-rose-100 text-rose-800"}">
                   ${curRNum >= 0 ? "+" : ""}${curR}R (${pnlPct >= 0 ? "+" : ""}${pnlPct.toFixed(1)}%)
                 </span>
+                ${realizedBadge}
               </div>
               <div class="flex flex-wrap items-center gap-1.5">
                 ${suggestedStop !== null ? `<button data-raisestop="${idx}" data-newstop="${suggestedStop}" class="raisestop-btn px-2.5 py-1.5 rounded-lg text-[11px] font-bold bg-amber-100 text-amber-900 hover:bg-amber-200 border border-amber-300">${suggestedStopLabel}</button>` : ""}
                 <button data-pyr="${idx}" class="pyr-btn px-2.5 py-1.5 rounded-lg text-[11px] font-semibold bg-blue-50 text-blue-700 hover:bg-blue-100 border border-blue-200">2차·추가매수 체크</button>
+                ${p.shares >= 2 ? `<button data-partial="${idx}" class="partial-btn px-2.5 py-1.5 rounded-lg text-[11px] font-semibold bg-emerald-50 text-emerald-700 hover:bg-emerald-100 border border-emerald-300">일부 익절</button>` : ""}
                 <button data-closepos="${idx}" class="closepos-btn px-2.5 py-1.5 rounded-lg text-[11px] font-semibold bg-slate-800 text-white hover:bg-slate-900">매도 완료 (일지 저장)</button>
                 <button data-delpos="${idx}" class="delpos-btn px-2.5 py-1.5 rounded-lg text-[11px] font-semibold bg-rose-50 text-rose-700 hover:bg-rose-100 border border-rose-200">삭제</button>
               </div>
             </div>
 
-            <!-- Clear Money Summary Strip: 총 매수액 / 현재 평가액 / 수익금액 -->
-            <div class="grid grid-cols-1 sm:grid-cols-3 gap-2 text-xs tabular-nums">
-              <div class="px-3 py-2 rounded-xl bg-slate-50 border border-slate-200 flex items-center justify-between">
-                <span class="text-[11px] text-slate-500 font-semibold">총 매수액 (${p.shares}주)</span>
-                <span class="font-bold text-slate-900">${buyTotalKrw.toLocaleString()}원 <span class="text-[10px] font-normal text-slate-500">($${buyTotalUsd.toFixed(1)})</span></span>
+            <!-- Card Body -->
+            <div class="p-4 space-y-3">
+              <!-- Clear Money Summary Strip: 총 매수액 / 현재 평가액 / 수익금액 -->
+              <div class="grid grid-cols-1 sm:grid-cols-3 gap-2 text-xs tabular-nums">
+                <div class="px-3 py-2 rounded-xl bg-slate-50 border border-slate-200 flex items-center justify-between">
+                  <span class="text-[11px] text-slate-500 font-semibold">총 매수액 (${p.shares}주)</span>
+                  <span class="font-bold text-slate-900">${buyTotalKrw.toLocaleString()}원 <span class="text-[10px] font-normal text-slate-500">($${buyTotalUsd.toFixed(1)})</span></span>
+                </div>
+                <div class="px-3 py-2 rounded-xl bg-slate-50 border border-slate-200 flex items-center justify-between">
+                  <span class="text-[11px] text-slate-500 font-semibold">현재 평가액</span>
+                  <span class="font-bold text-slate-900">${evalTotalKrw.toLocaleString()}원 <span class="text-[10px] font-normal text-slate-500">($${evalTotalUsd.toFixed(1)})</span></span>
+                </div>
+                <div class="px-3 py-2 rounded-xl border flex items-center justify-between ${pnlUsd >= 0 ? "bg-emerald-50/70 border-emerald-200" : "bg-rose-50/70 border-rose-200"}">
+                  <span class="text-[11px] font-semibold ${pnlUsd >= 0 ? "text-emerald-800" : "text-rose-800"}">현재 수익금액</span>
+                  <span class="font-bold ${pnlUsd >= 0 ? "text-emerald-700" : "text-rose-700"}">${pnlKrw >= 0 ? "+" : ""}${pnlKrw.toLocaleString()}원 <span class="text-[10px] font-semibold">(${pnlUsd >= 0 ? "+" : ""}$${pnlUsd.toFixed(1)} · ${pnlPct >= 0 ? "+" : ""}${pnlPct.toFixed(1)}%)</span></span>
+                </div>
               </div>
-              <div class="px-3 py-2 rounded-xl bg-slate-50 border border-slate-200 flex items-center justify-between">
-                <span class="text-[11px] text-slate-500 font-semibold">현재 평가액</span>
-                <span class="font-bold text-slate-900">${evalTotalKrw.toLocaleString()}원 <span class="text-[10px] font-normal text-slate-500">($${evalTotalUsd.toFixed(1)})</span></span>
-              </div>
-              <div class="px-3 py-2 rounded-xl border flex items-center justify-between ${pnlUsd >= 0 ? "bg-emerald-50/70 border-emerald-200" : "bg-rose-50/70 border-rose-200"}">
-                <span class="text-[11px] font-semibold ${pnlUsd >= 0 ? "text-emerald-800" : "text-rose-800"}">현재 수익금액</span>
-                <span class="font-bold ${pnlUsd >= 0 ? "text-emerald-700" : "text-rose-700"}">${pnlKrw >= 0 ? "+" : ""}${pnlKrw.toLocaleString()}원 <span class="text-[10px] font-semibold">(${pnlUsd >= 0 ? "+" : ""}$${pnlUsd.toFixed(1)} · ${pnlPct >= 0 ? "+" : ""}${pnlPct.toFixed(1)}%)</span></span>
-              </div>
-            </div>
 
-            <!-- Action Banner -->
-            <div class="px-3 py-2 rounded-xl border text-xs font-semibold flex flex-wrap items-center justify-between gap-2 ${actionBoxClass}">
-              <span>지금 할 일: ${actionBadge}</span>
-              <span class="text-[11px] font-normal">현재 손절가 <strong>$${p.stop_price.toFixed(2)} (${stopDistPct >= 0 ? "+" : ""}${stopDistPct.toFixed(1)}%)</strong> · ${stopText}</span>
-            </div>
+              <!-- Action Banner -->
+              <div class="px-3 py-2 rounded-xl border text-xs font-semibold flex flex-wrap items-center justify-between gap-2 ${actionBoxClass}">
+                <span>지금 할 일: ${actionBadge}</span>
+                <span class="text-[11px] font-normal">현재 손절가 <strong>$${p.stop_price.toFixed(2)} (${stopDistPct >= 0 ? "+" : ""}${stopDistPct.toFixed(1)}%)</strong> · ${stopText}</span>
+              </div>
 
-            <!-- Time-Series Roadmap Strip with explicit % and exact partial-sell share counts -->
-            <div class="grid grid-cols-2 sm:grid-cols-6 gap-2 text-[11px] tabular-nums">
-              <div class="p-2 rounded-xl bg-rose-50/70 border border-rose-200">
-                <div class="text-[10px] font-semibold text-rose-700">손절가 (전량매도)</div>
-                <div class="font-bold text-rose-950 text-xs mt-0.5">$${p.stop_price.toFixed(2)} <span class="text-[10px] font-semibold">(${stopDistPct >= 0 ? "+" : ""}${stopDistPct.toFixed(1)}%)</span></div>
-                <div class="text-[10px] text-rose-700">${p.shares}주 전량 매도</div>
-              </div>
-              <div class="p-2 rounded-xl bg-slate-50 border border-slate-200">
-                <div class="text-[10px] font-semibold text-slate-500">평균매수가</div>
-                <div class="font-bold text-slate-900 text-xs mt-0.5">$${p.avg_entry.toFixed(2)} <span class="text-[10px] font-normal text-slate-500">(0.0%)</span></div>
-                <div class="text-[10px] text-slate-500">기준 0R</div>
-              </div>
-              <div class="p-2 rounded-xl ${curRNum >= 0 ? "bg-sky-50 border-sky-300 ring-1 ring-sky-300" : "bg-orange-50 border-orange-300 ring-1 ring-orange-300"} border">
-                <div class="text-[10px] font-semibold ${curRNum >= 0 ? "text-sky-700" : "text-orange-700"}">현재가</div>
-                <div class="font-bold text-slate-950 text-xs mt-0.5">$${p.current_price.toFixed(2)} <span class="text-[10px] font-bold ${pnlPct >= 0 ? "text-emerald-700" : "text-rose-700"}">(${pnlPct >= 0 ? "+" : ""}${pnlPct.toFixed(1)}%)</span></div>
-                <div class="text-[10px] font-semibold ${curRNum >= 0 ? "text-emerald-700" : "text-rose-700"}">${curRNum >= 0 ? "+" : ""}${curR}R</div>
-              </div>
-              <div class="p-2 rounded-xl border ${p.current_price >= p1R ? "bg-amber-50 border-amber-300" : "bg-slate-50/60 border-slate-200"}">
-                <div class="text-[10px] font-semibold ${p.current_price >= p1R ? "text-amber-800" : "text-slate-500"}">+1R 목표 ${p.current_price >= p1R ? "✓달성" : ""}</div>
-                <div class="font-bold text-slate-900 text-xs mt-0.5">$${p1R.toFixed(2)} <span class="text-[10px] font-semibold text-amber-700">(+${pct1R}%)</span></div>
-                <div class="text-[10px] text-slate-600">매도 없음 · 손절→본전</div>
-              </div>
-              <div class="p-2 rounded-xl border ${p.current_price >= p2R ? "bg-emerald-50 border-emerald-300" : "bg-slate-50/60 border-slate-200"}">
-                <div class="text-[10px] font-semibold ${p.current_price >= p2R ? "text-emerald-800" : "text-slate-500"}">+2R 목표 ${p.current_price >= p2R ? "✓달성" : ""}</div>
-                <div class="font-bold text-slate-900 text-xs mt-0.5">$${p2R.toFixed(2)} <span class="text-[10px] font-semibold text-emerald-700">(+${pct2R}%)</span></div>
-                <div class="text-[10px] text-slate-600">${sell2R > 0 ? `${sell2R}주 익절(${remAfter2R}주 남김)` : "전량 보유"} · 손절 +1R</div>
-              </div>
-              <div class="p-2 rounded-xl border ${p.current_price >= p3R ? "bg-indigo-50 border-indigo-300" : "bg-slate-50/60 border-slate-200"}">
-                <div class="text-[10px] font-semibold ${p.current_price >= p3R ? "text-indigo-800" : "text-slate-500"}">+3R 목표 ${p.current_price >= p3R ? "✓달성" : ""}</div>
-                <div class="font-bold text-slate-900 text-xs mt-0.5">$${p3R.toFixed(2)} <span class="text-[10px] font-semibold text-indigo-700">(+${pct3R}%)</span></div>
-                <div class="text-[10px] text-slate-600">${sell3R > 0 ? `${sell3R}주 추가익절(${remAfter3R}주)` : `${remAfter3R}주`} 추세추종</div>
+              <!-- 7-Step Time-Series Roadmap Strip (including +4R 이상) -->
+              <div class="grid grid-cols-2 sm:grid-cols-7 gap-2 text-[11px] tabular-nums">
+                <div class="p-2 rounded-xl bg-rose-50/70 border border-rose-200">
+                  <div class="text-[10px] font-semibold text-rose-700">손절가 (전량매도)</div>
+                  <div class="font-bold text-rose-950 text-xs mt-0.5">$${p.stop_price.toFixed(2)} <span class="text-[10px] font-semibold">(${stopDistPct >= 0 ? "+" : ""}${stopDistPct.toFixed(1)}%)</span></div>
+                  <div class="text-[10px] text-rose-700">${p.shares}주 전량 매도</div>
+                </div>
+                <div class="p-2 rounded-xl bg-slate-50 border border-slate-200">
+                  <div class="text-[10px] font-semibold text-slate-500">평균매수가</div>
+                  <div class="font-bold text-slate-900 text-xs mt-0.5">$${p.avg_entry.toFixed(2)} <span class="text-[10px] font-normal text-slate-500">(0.0%)</span></div>
+                  <div class="text-[10px] text-slate-500">기준 0R</div>
+                </div>
+                <div class="p-2 rounded-xl ${curRNum >= 0 ? "bg-sky-50 border-sky-300 ring-1 ring-sky-300" : "bg-orange-50 border-orange-300 ring-1 ring-orange-300"} border">
+                  <div class="text-[10px] font-semibold ${curRNum >= 0 ? "text-sky-700" : "text-orange-700"}">현재가 (${p.price_date || currentTradeDate})</div>
+                  <div class="font-bold text-slate-950 text-xs mt-0.5">$${p.current_price.toFixed(2)} <span class="text-[10px] font-bold ${pnlPct >= 0 ? "text-emerald-700" : "text-rose-700"}">(${pnlPct >= 0 ? "+" : ""}${pnlPct.toFixed(1)}%)</span></div>
+                  <div class="text-[10px] font-semibold ${curRNum >= 0 ? "text-emerald-700" : "text-rose-700"}">${curRNum >= 0 ? "+" : ""}${curR}R</div>
+                </div>
+                <div class="p-2 rounded-xl border ${p.current_price >= p1R ? "bg-amber-50 border-amber-300" : "bg-slate-50/60 border-slate-200"}">
+                  <div class="text-[10px] font-semibold ${p.current_price >= p1R ? "text-amber-800" : "text-slate-500"}">+1R 목표 ${p.current_price >= p1R ? "✓달성" : ""}</div>
+                  <div class="font-bold text-slate-900 text-xs mt-0.5">$${p1R.toFixed(2)} <span class="text-[10px] font-semibold text-amber-700">(+${pct1R}%)</span></div>
+                  <div class="text-[10px] text-slate-600">매도 없음 · 손절→본전</div>
+                </div>
+                <div class="p-2 rounded-xl border ${p.current_price >= p2R ? "bg-emerald-50 border-emerald-300" : "bg-slate-50/60 border-slate-200"}">
+                  <div class="text-[10px] font-semibold ${p.current_price >= p2R ? "text-emerald-800" : "text-slate-500"}">+2R 목표 ${p.current_price >= p2R ? "✓달성" : ""}</div>
+                  <div class="font-bold text-slate-900 text-xs mt-0.5">$${p2R.toFixed(2)} <span class="text-[10px] font-semibold text-emerald-700">(+${pct2R}%)</span></div>
+                  <div class="text-[10px] text-slate-600">${sell2R > 0 ? `${sell2R}주 익절(${remAfter2R}주 남김)` : "전량 보유"} · 손절 +1R</div>
+                </div>
+                <div class="p-2 rounded-xl border ${p.current_price >= p3R ? "bg-indigo-50 border-indigo-300" : "bg-slate-50/60 border-slate-200"}">
+                  <div class="text-[10px] font-semibold ${p.current_price >= p3R ? "text-indigo-800" : "text-slate-500"}">+3R 목표 ${p.current_price >= p3R ? "✓달성" : ""}</div>
+                  <div class="font-bold text-slate-900 text-xs mt-0.5">$${p3R.toFixed(2)} <span class="text-[10px] font-semibold text-indigo-700">(+${pct3R}%)</span></div>
+                  <div class="text-[10px] text-slate-600">${sell3R > 0 ? `${sell3R}주 추가익절(${remAfter3R}주)` : `${remAfter3R}주`} · 손절 +2R</div>
+                </div>
+                <div class="p-2 rounded-xl border ${p.current_price >= p4R ? "bg-purple-50 border-purple-300" : "bg-slate-50/60 border-slate-200"}">
+                  <div class="text-[10px] font-semibold ${p.current_price >= p4R ? "text-purple-800" : "text-slate-500"}">+4R 이상 ${p.current_price >= p4R ? "✓대시세" : ""}</div>
+                  <div class="font-bold text-slate-900 text-xs mt-0.5">$${p4R.toFixed(2)}↑ <span class="text-[10px] font-semibold text-purple-700">(+${pct4R}%↑)</span></div>
+                  <div class="text-[10px] text-slate-600">${smaHint}</div>
+                </div>
               </div>
             </div>
           </div>
@@ -3162,13 +3286,25 @@ python -m unittest discover -s tests -v</pre>
       if (openPositions.length >= 4) { showToast("최대 보유 종목(4개) 한도에 도달했습니다"); return; }
       const plan = calculateRiskPlanUI();
       if (!plan || plan.tranche <= 0) { showToast("유효한 진입 수량이 아닙니다"); return; }
-      openPositions.push({ ticker: plan.ticker, shares: plan.tranche, avg_entry: plan.entry, current_price: plan.entry, initial_stop: plan.stop, stop_price: plan.stop, stop_source: "VALIDATED_TECHNICAL_STOP" });
+      openPositions.push({ ticker: plan.ticker, shares: plan.tranche, avg_entry: plan.entry, current_price: plan.entry, initial_stop: plan.stop, stop_price: plan.stop, stop_source: "VALIDATED_TECHNICAL_STOP", price_date: currentTradeDate, realized_pnl_usd: 0, realized_shares: 0 });
       showToast(`${plan.ticker} ${plan.tranche}주 1차 편입 완료`);
       renderDashboard();
       switchTab("positions");
     });
 
     // Budget Example Modal events
+    document.addEventListener("keydown", e => {
+      if (e.key === "Escape") {
+        ["budget-example-modal", "pyramid-guide-modal", "partial-sell-modal", "import-modal", "guide-modal", "vcp-detail-modal"].forEach(id => {
+          const el = document.getElementById(id);
+          if (el && !el.classList.contains("hidden")) {
+            el.classList.add("hidden");
+            el.classList.remove("flex");
+          }
+        });
+      }
+    });
+
     const budgetModal = document.getElementById("budget-example-modal");
     document.getElementById("btn-budget-example")?.addEventListener("click", () => {
       budgetModal?.classList.remove("hidden");
@@ -3180,6 +3316,51 @@ python -m unittest discover -s tests -v</pre>
         budgetModal?.classList.remove("flex");
       });
     });
+    const psModal = document.getElementById("partial-sell-modal");
+    ["btn-close-ps-modal", "btn-cancel-ps-modal"].forEach(id => {
+      document.getElementById(id)?.addEventListener("click", () => {
+        psModal?.classList.add("hidden");
+        psModal?.classList.remove("flex");
+      });
+    });
+    psModal?.addEventListener("click", e => {
+      if (e.target === psModal) {
+        psModal.classList.add("hidden");
+        psModal.classList.remove("flex");
+      }
+    });
+    document.getElementById("btn-confirm-ps-modal")?.addEventListener("click", () => {
+      const p = openPositions[window._psIdx];
+      if (!p) return;
+      const qty = Math.max(1, Math.min(p.shares - 1, Math.floor(Number(document.getElementById("ps-qty").value) || 1)));
+      const sellPrice = Number(document.getElementById("ps-price").value) || p.current_price;
+      const realizedUsd = (sellPrice - p.avg_entry) * qty;
+      p.shares -= qty;
+      p.realized_shares = (p.realized_shares || 0) + qty;
+      p.realized_pnl_usd = (p.realized_pnl_usd || 0) + realizedUsd;
+      if (window._psRecStop !== null && document.getElementById("ps-raise-stop").checked && window._psRecStop > p.stop_price) {
+        p.stop_price = window._psRecStop;
+      }
+      journalTrades.unshift({
+        id: `T-00${journalTrades.length + 1}`,
+        record_type: "LIVE",
+        ticker: p.ticker,
+        regime: currentRegimeData?.regime || "CAUTION",
+        setup: "VCP",
+        entry_price: p.avg_entry,
+        exit_price: sellPrice,
+        initial_stop: p.initial_stop,
+        rule_compliant: true,
+        note: `[일부 익절 ${qty}주] 잔여 ${p.shares}주 보유 중`
+      });
+      psModal?.classList.add("hidden");
+      psModal?.classList.remove("flex");
+      renderDashboard();
+      renderPositionsTab();
+      renderJournalTab();
+      showToast(`${p.ticker} ${qty}주 일부 익절 완료! 7. 매매 일지에 저장되었습니다.`);
+    });
+
     const pyrModal = document.getElementById("pyramid-guide-modal");
     ["btn-close-pyr-modal", "btn-ok-pyr-modal"].forEach(id => {
       document.getElementById(id)?.addEventListener("click", () => {
@@ -3214,6 +3395,56 @@ python -m unittest discover -s tests -v</pre>
         }
         return;
       }
+      const part = e.target.closest(".partial-btn");
+      if (part) {
+        const idx = Number(part.dataset.partial);
+        const p = openPositions[idx];
+        if (!p || p.shares < 2) return;
+        window._psIdx = idx;
+        const rUnit = Math.max(0.01, p.avg_entry - p.initial_stop);
+        const curRNum = (p.current_price - p.avg_entry) / rUnit;
+        const defaultQty = p.shares >= 3 ? Math.floor(p.shares / 3) : 1;
+        const fx = Number(document.getElementById("rp-fx")?.value) || 1400;
+        const psModal = document.getElementById("partial-sell-modal");
+        const qtyInput = document.getElementById("ps-qty");
+        const priceInput = document.getElementById("ps-price");
+        qtyInput.max = p.shares - 1;
+        qtyInput.value = Math.min(defaultQty, p.shares - 1);
+        priceInput.value = p.current_price.toFixed(2);
+        document.getElementById("ps-modal-info").innerHTML = `<strong>${p.ticker}</strong> · 현재 보유 <strong>${p.shares}주</strong> · 평균매수가 <strong>$${p.avg_entry.toFixed(2)}</strong>`;
+
+        let recStop = null;
+        if (curRNum >= 3 && p.stop_price < p.avg_entry + rUnit * 2) recStop = +(p.avg_entry + rUnit * 2).toFixed(2);
+        else if (curRNum >= 2 && p.stop_price < p.avg_entry + rUnit) recStop = +(p.avg_entry + rUnit).toFixed(2);
+        else if (curRNum >= 1 && p.stop_price < p.avg_entry) recStop = +p.avg_entry.toFixed(2);
+        window._psRecStop = recStop;
+        const raiseWrap = document.getElementById("ps-raise-wrap");
+        const raiseCb = document.getElementById("ps-raise-stop");
+        const raiseLbl = document.getElementById("ps-raise-label");
+        if (recStop !== null) {
+          raiseWrap.classList.remove("hidden");
+          raiseCb.checked = true;
+          raiseLbl.textContent = `남은 물량 손절선을 $${recStop.toFixed(2)}로 자동 상향하기`;
+        } else {
+          raiseWrap.classList.add("hidden");
+          raiseCb.checked = false;
+        }
+
+        const updatePsPreview = () => {
+          const q = Math.max(1, Math.min(p.shares - 1, Math.floor(Number(qtyInput.value) || 1)));
+          const pr = Number(priceInput.value) || p.current_price;
+          const usd = (pr - p.avg_entry) * q;
+          const krw = Math.round(usd * fx);
+          const rVal = ((pr - p.avg_entry) / rUnit).toFixed(2);
+          document.getElementById("ps-preview").innerHTML = `남은 수량: <strong>${p.shares - q}주</strong> · 이번 일부 익절 실현손익: <strong>${krw >= 0 ? "+" : ""}${krw.toLocaleString()}원 (${usd >= 0 ? "+" : ""}$${usd.toFixed(1)} · ${Number(rVal) >= 0 ? "+" : ""}${rVal}R)</strong>`;
+        };
+        qtyInput.oninput = updatePsPreview;
+        priceInput.oninput = updatePsPreview;
+        updatePsPreview();
+        psModal.classList.remove("hidden");
+        psModal.classList.add("flex");
+        return;
+      }
       const pyr = e.target.closest(".pyr-btn");
       if (pyr) {
         const idx = Number(pyr.dataset.pyr);
@@ -3227,7 +3458,7 @@ python -m unittest discover -s tests -v</pre>
         const bodyEl = document.getElementById("pyr-modal-body");
         if (titleEl) titleEl.textContent = `${p.ticker} — 2차·추가매수 판단 가이드`;
         if (bodyEl) {
-          if (p.current_price <= p.avg_entry) {
+          if (p.current_price < p.avg_entry - 0.001) {
             bodyEl.innerHTML = `
               <div class="p-3 rounded-xl bg-rose-50 border border-rose-200 text-rose-950 font-semibold">
                 🔴 추가매수 불가 (현재 ${gain.toFixed(1)}% 손실 중 · 물타기 금지)
@@ -3237,6 +3468,18 @@ python -m unittest discover -s tests -v</pre>
                 <p>• 주가가 내 평균매수가(<strong>$${p.avg_entry.toFixed(2)}</strong>)보다 아래에 있어 <strong>절대 더 사면 안 됩니다.</strong></p>
                 <p>• 가격이 더 떨어져 손절가(<strong>$${p.stop_price.toFixed(2)}</strong>)에 닿으면 보유 중인 <strong>${p.shares}주 전량 매도</strong>하세요.</p>
                 <p>• 주가가 다시 <strong>$${target8Price.toFixed(2)} (+8%)</strong> 이상 오를 때까지 추가매수는 보류합니다.</p>
+              </div>
+            `;
+          } else if (p.current_price <= p.avg_entry + 0.001) {
+            bodyEl.innerHTML = `
+              <div class="p-3 rounded-xl bg-amber-50 border border-amber-200 text-amber-950 font-semibold">
+                🟡 대기 중 (현재 0.0% · 매수 직후 본전 구간)
+              </div>
+              <div class="p-3 rounded-xl bg-slate-50 border border-slate-200 space-y-1.5">
+                <div class="font-bold text-slate-900">지금 해야 할 일</div>
+                <p>• 방금 매수했거나 매수가(<strong>$${p.avg_entry.toFixed(2)}</strong>) 부근입니다. 아직 수익이 확인되지 않았으므로 추가매수는 기다리세요.</p>
+                <p>• 주가가 내 매수가 대비 <strong>+8% ($${target8Price.toFixed(2)}) 이상</strong> 올라가며 새 지지선(피벗)을 만들 때 추가매수를 검토합니다.</p>
+                <p>• 만약 반대로 내려가 손절가(<strong>$${p.stop_price.toFixed(2)}</strong>)에 닿으면 보유 중인 <strong>${p.shares}주 전량 손절</strong>하세요.</p>
               </div>
             `;
           } else if (gain < 8) {
@@ -3392,6 +3635,8 @@ python -m unittest discover -s tests -v</pre>
           badgeEl.className = "px-3 py-1.5 rounded-xl text-xs font-bold bg-amber-100 text-amber-800 border border-amber-300 shrink-0";
         }
       }
+      currentTradeDate = parsed.trade_date || "최신 종가";
+      syncOpenPositionsPrices(currentTradeDate);
       document.getElementById("data-mode-badge").textContent = `실제 파이프라인 데이터 (${stocks.length}종목 · ${parsed.trade_date || "최신"})`;
       document.getElementById("data-mode-badge").className = "px-2 py-0.5 rounded-full text-[11px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200";
       state.selectedTicker = stocks[0].ticker;
@@ -4084,52 +4329,6 @@ python -m unittest discover -s tests -v</pre>
       if (e.target.id === "vcp-detail-modal") closeVcpDetailModal();
     });
   </script>
-
-  <!-- Budget Example Modal -->
-  <div id="budget-example-modal" class="fixed inset-0 z-50 hidden items-center justify-center bg-slate-900/50 p-4">
-    <div class="bg-white rounded-2xl max-w-lg w-full p-5 shadow-xl border border-slate-200 space-y-3">
-      <div class="flex items-center justify-between border-b border-slate-100 pb-2.5">
-        <h3 class="text-sm font-bold text-slate-900">왜 100만·250만원을 써도 71만원만 사라고 나오나요?</h3>
-        <button id="btn-close-budget-modal" type="button" class="text-slate-400 hover:text-slate-700 text-lg font-bold px-1">&times;</button>
-      </div>
-      <div class="space-y-2.5 text-xs text-slate-700 leading-relaxed">
-        <p class="bg-indigo-50/70 border border-indigo-200 rounded-xl p-3 text-indigo-950">
-          보통 주식을 살 때는 <em>"이 종목에 100만원 넣어야지"</em> 하고 시작하지만, 미너비니 계산기는 <strong>순서가 정반대</strong>입니다.<br>
-          <strong>"내가 잃어도 되는 돈이 딱 5만원인데, 그럼 몇 주까지 살 수 있지?"</strong>를 먼저 계산합니다.
-        </p>
-        <div class="p-3 rounded-xl bg-slate-50 border border-slate-200 space-y-1">
-          <div class="font-bold text-slate-900">① 지금 FLYW가 71만원만 나오는 이유</div>
-          <p>• 1주 가격이 <strong>32,564원</strong>이고, 손절하면 1주당 <strong>2,268원</strong>을 잃습니다.</p>
-          <p>• 내 허용 손실은 <strong>50,000원</strong>(1,000만원의 0.5%)뿐이므로: <code class="bg-white px-1 py-0.5 rounded border">50,000원 ÷ 2,268원 = 22주</code>만 살 수 있습니다.</p>
-          <p>• 이 22주 가격이 <strong>716,408원</strong>이라서, 한도를 100만원·250만원으로 잡아도 <strong>5만원 손실 제한이 먼저 걸려 71만원에서 멈춥니다.</strong></p>
-        </div>
-        <div class="p-3 rounded-xl bg-emerald-50/70 border border-emerald-200 space-y-1">
-          <div class="font-bold text-emerald-950">② 그럼 '기본 25% (250만원)' 한도는 언제 작동하나요?</div>
-          <p>• 반대로 <strong>1주 14만원($100)</strong>짜리 주식인데 손절가가 바로 코앞인 <strong>13만 8,600원($99)</strong>이라면, 1주당 잃는 돈이 겨우 <strong>1,400원</strong>입니다.</p>
-          <p>• 똑같이 <code class="bg-white px-1 py-0.5 rounded border">50,000원 ÷ 1,400원</code>을 하면 <strong>35주(490만원!)</strong>나 살 수 있어 내 재산 절반을 한 종목에 몰빵하게 됩니다.</p>
-          <p>• 이때 <strong>"아무리 많이 살 수 있어도 25%(250만원) 이상은 절대 못 사게 막자!"</strong>고 작동하는 안전 브레이크입니다.</p>
-        </div>
-      </div>
-      <div class="flex justify-end pt-1">
-        <button id="btn-ok-budget-modal" type="button" class="px-4 py-1.5 rounded-xl text-xs font-semibold bg-indigo-600 text-white hover:bg-indigo-700">이해했어요</button>
-      </div>
-    </div>
-  </div>
-
-
-  <!-- Pyramid / 2nd Buy Guide Modal -->
-  <div id="pyramid-guide-modal" class="fixed inset-0 z-50 hidden items-center justify-center bg-slate-900/50 p-4">
-    <div class="bg-white rounded-2xl max-w-lg w-full p-5 shadow-xl border border-slate-200 space-y-3">
-      <div class="flex items-center justify-between border-b border-slate-100 pb-2.5">
-        <h3 id="pyr-modal-title" class="text-sm font-bold text-slate-900">2차 · 추가매수 판단 가이드</h3>
-        <button id="btn-close-pyr-modal" type="button" class="text-slate-400 hover:text-slate-700 text-lg font-bold px-1">&times;</button>
-      </div>
-      <div id="pyr-modal-body" class="space-y-2.5 text-xs text-slate-700 leading-relaxed"></div>
-      <div class="flex justify-end pt-1">
-        <button id="btn-ok-pyr-modal" type="button" class="px-4 py-1.5 rounded-xl text-xs font-semibold bg-slate-900 text-white hover:bg-slate-800">확인 (닫기)</button>
-      </div>
-    </div>
-  </div>
 
 </body>
 </html>
