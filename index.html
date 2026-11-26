@@ -612,10 +612,10 @@
 
     <!-- ==================== TAB 5: TRADE PLAN (RISK ENGINE) ==================== -->
     <section id="tab-tradeplan" class="tab-panel hidden space-y-4">
-      <div class="grid grid-cols-1 lg:grid-cols-12 gap-4 items-start">
-        <!-- Left: Compact Inputs + R-Multiple Guide (fills left column cleanly) -->
-        <div class="lg:col-span-4 space-y-3">
-          <div class="bg-white border border-slate-200 rounded-2xl p-4 shadow-sm space-y-2.5">
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-4 items-stretch">
+        <!-- Left: Compact Inputs (same height as Right card) -->
+        <div class="lg:col-span-4 bg-white border border-slate-200 rounded-2xl p-4 shadow-sm flex flex-col justify-between space-y-3">
+          <div class="space-y-2.5">
             <div class="flex items-center justify-between">
               <h2 class="text-sm font-bold text-slate-900">매매 계획 입력 (티커 · 금액)</h2>
               <span class="text-[10px] font-semibold text-slate-500">자동 실시간 계산</span>
@@ -640,16 +640,17 @@
               <div class="col-span-2">
                 <div class="flex items-center justify-between mb-0.5">
                   <label class="text-[11px] font-semibold text-slate-700">내 총 투자자산 (원)</label>
-                  <span id="rp-equity-kr" class="text-[11px] font-bold text-indigo-700">일천만원</span>
+                  <span id="rp-equity-kr" class="text-[11px] font-bold text-indigo-700">1,000만원</span>
                 </div>
                 <input id="rp-equity" type="text" inputmode="numeric" value="10,000,000" class="w-full px-2.5 py-1.5 border border-slate-300 rounded-lg tabular-nums font-semibold" />
               </div>
               <div class="col-span-2">
                 <div class="flex items-center justify-between mb-0.5">
                   <label class="text-[11px] font-semibold text-slate-700">이 종목 최대 투자한도 (원 · 선택)</label>
-                  <span id="rp-budget-kr" class="text-[11px] font-bold text-emerald-700">자동(총자산 25%)</span>
+                  <span id="rp-budget-kr" class="text-[11px] font-bold text-emerald-700">자동 25% (250만원)</span>
                 </div>
                 <input id="rp-stock-budget" type="text" inputmode="numeric" placeholder="비우면 총 투자자산의 25% 자동 적용" value="" class="w-full px-2.5 py-1.5 border border-slate-300 rounded-lg tabular-nums" />
+                <p class="text-[10px] text-slate-500 mt-1 leading-snug">※ 왜 기본 25%인가요? 미너비니는 한 종목에 계좌의 25% 이상 몰빵하지 않고 4~5개 주도주에 분산합니다. 최종 매수금액은 <strong>① 이 투자한도와 ② 아래 0.5% 손실 한도 기준 금액 중 더 작은 쪽</strong>으로 자동 결정됩니다.</p>
               </div>
               <div class="col-span-2">
                 <div class="flex items-center justify-between mb-0.5">
@@ -657,66 +658,78 @@
                   <span class="text-[10px] text-slate-500">권장 0.5%</span>
                 </div>
                 <input id="rp-risk-pct" type="number" step="0.1" value="0.5" class="w-full px-2.5 py-1.5 border border-slate-300 rounded-lg tabular-nums" />
-                <p class="text-[10px] text-slate-500 mt-1 leading-snug">※ 왜 0.5~1.0%인가요? 손절할 때마다 내 총 투자자산의 0.5%만 잃도록 막아두면, <strong>10번 연속 틀려도 계좌의 95%가 남아</strong> 다음 주도주로 바로 복구할 수 있습니다.</p>
+                <p class="text-[10px] text-slate-500 mt-1 leading-snug">※ 왜 0.5~1.0%인가요? 손절 시 총 자산의 0.5%만 잃도록 수량을 제한하면, <strong>10번 연속 손절해도 계좌의 95%가 남아</strong> 재기할 수 있습니다.</p>
               </div>
             </div>
-            <div class="flex gap-2 pt-1">
-              <button id="btn-calc-risk" type="button" class="px-3 py-2 rounded-xl text-xs font-semibold bg-slate-100 text-slate-700 hover:bg-slate-200 border border-slate-200">초기화</button>
-              <button id="btn-add-position" type="button" class="flex-1 py-2 rounded-xl text-xs font-semibold bg-emerald-600 text-white hover:bg-emerald-700">6. 보유종목에 1차 매수 등록 →</button>
-            </div>
           </div>
-
-          <!-- Beginner R-Multiple Guide (Eliminates left-bottom whitespace) -->
-          <div class="bg-indigo-50/70 border border-indigo-200 rounded-2xl p-3.5 text-[11px] text-indigo-950 space-y-1.5 leading-relaxed">
-            <div class="font-bold text-xs">초보자를 위한 'R(위험 단위)' 운영 원리</div>
-            <p><strong>• 1R이란?</strong> 내가 정한 <strong>초기 손절폭(예: -7%)</strong>을 1배(1R)로 부릅니다. 손절폭의 1배 오르면 <strong>+1R</strong>, 2배 오르면 <strong>+2R</strong>, 3배 오르면 <strong>+3R</strong>입니다.</p>
-            <p><strong>• 딱 3R까지만 보나요? 아닙니다!</strong> 미너비니는 평균 수익 구간인 <strong>+2R~+3R(+14~21%)</strong>에서 일부를 익절해 수익을 챙긴 뒤, 남은 물량은 <strong>+4R·+5R·+10R(+50~100%↑)까지 10·20일선을 타고 끝까지 보유</strong>합니다.</p>
+          <div class="flex gap-2 pt-2 border-t border-slate-100">
+            <button id="btn-calc-risk" type="button" class="px-3 py-2 rounded-xl text-xs font-semibold bg-slate-100 text-slate-700 hover:bg-slate-200 border border-slate-200">초기화</button>
+            <button id="btn-add-position" type="button" class="flex-1 py-2 rounded-xl text-xs font-semibold bg-emerald-600 text-white hover:bg-emerald-700">6. 보유종목에 1차 매수 등록 →</button>
           </div>
         </div>
 
-        <!-- Right: Ordered Summary Strip (4 cards in 1 row) + Complete 1R/2R/3R/4R+ Roadmap -->
-        <div class="lg:col-span-8 bg-white border border-slate-200 rounded-2xl p-4 shadow-sm space-y-3">
-          <div class="flex flex-wrap items-center justify-between gap-2">
-            <div class="flex items-center gap-2">
-              <h3 class="text-sm font-bold text-slate-900">매매 계획 산출 결과</h3>
-              <span id="rp-plan-price-note" class="text-[11px] text-slate-500">티커 입력 시 최종 종가 자동 세팅</span>
-            </div>
-            <span id="rp-status-badge" class="px-2.5 py-1 rounded-lg text-xs font-bold bg-emerald-50 text-emerald-700">진입 가능 (리스크 기준 충족)</span>
-          </div>
-
-          <!-- Ordered Flow: 1. Buy Amount -> 2. Shares (1st/2nd) -> 3. Stop Loss -> 4. Max Risk (1R) -->
-          <div class="grid grid-cols-2 sm:grid-cols-4 gap-2.5 text-xs">
-            <div class="p-2.5 rounded-xl bg-indigo-50/70 border border-indigo-200">
-              <div class="text-[11px] text-indigo-800 font-semibold">① 매수 예정 금액</div>
-              <div id="rp-out-val" class="text-sm font-bold text-indigo-950 tabular-nums mt-0.5">-</div>
-            </div>
-            <div class="p-2.5 rounded-xl bg-emerald-50/70 border border-emerald-200">
-              <div class="text-[11px] text-emerald-800 font-semibold">② 목표 수량 (1차/2차)</div>
-              <div id="rp-out-shares" class="text-sm font-bold text-emerald-950 tabular-nums mt-0.5">-</div>
-              <div id="rp-out-tranche" class="text-[10px] text-emerald-700 tabular-nums">-</div>
-            </div>
-            <div class="p-2.5 rounded-xl bg-rose-50/70 border border-rose-200">
-              <div class="text-[11px] text-rose-800 font-semibold">③ 손절가 · 손절폭</div>
-              <div id="rp-out-stop" class="text-sm font-bold text-rose-950 tabular-nums mt-0.5">-</div>
-              <div id="rp-out-dist" class="text-[10px] text-rose-700 tabular-nums">-</div>
-            </div>
-            <div class="p-2.5 rounded-xl bg-slate-50 border border-slate-200">
-              <div class="text-[11px] text-slate-600 font-semibold">④ 최대 손실 한도(1R)</div>
-              <div id="rp-out-loss" class="text-sm font-bold text-slate-900 tabular-nums mt-0.5">-</div>
-            </div>
-          </div>
-
-          <div class="p-3 rounded-xl bg-slate-50 border border-slate-200 space-y-2">
+        <!-- Right: Ordered Summary Strip + Complete 1R/2R/3R/4R+ Roadmap (same height as Left card) -->
+        <div class="lg:col-span-8 bg-white border border-slate-200 rounded-2xl p-4 shadow-sm flex flex-col justify-between space-y-3">
+          <div class="space-y-3">
             <div class="flex flex-wrap items-center justify-between gap-2">
-              <h4 class="text-xs font-bold text-slate-900">미너비니 기계적 단계별 실행 플랜 (진입 → -1R 손절 → +1R · +2R · +3R · 4R+ 추세추종)</h4>
+              <div class="flex items-center gap-2">
+                <h3 class="text-sm font-bold text-slate-900">매매 계획 산출 결과</h3>
+                <span id="rp-plan-price-note" class="text-[11px] text-slate-500">티커 입력 시 최종 종가 자동 세팅</span>
+              </div>
+              <span id="rp-status-badge" class="px-2.5 py-1 rounded-lg text-xs font-bold bg-emerald-50 text-emerald-700">진입 가능 (리스크 기준 충족)</span>
             </div>
-            <div id="rp-r-plan-body" class="text-[11px] text-slate-700 space-y-1.5 leading-snug">
-              티커와 투자금액을 입력하면 단계별 매매 플랜이 표시됩니다.
+
+            <!-- Ordered Flow: 1. Buy Amount -> 2. Shares (1st/2nd) -> 3. Stop Loss -> 4. Max Risk (1R) -->
+            <div class="grid grid-cols-2 sm:grid-cols-4 gap-2.5 text-xs">
+              <div class="p-2.5 rounded-xl bg-indigo-50/70 border border-indigo-200">
+                <div class="text-[11px] text-indigo-800 font-semibold">① 매수 예정 금액</div>
+                <div id="rp-out-val" class="text-sm font-bold text-indigo-950 tabular-nums mt-0.5">-</div>
+              </div>
+              <div class="p-2.5 rounded-xl bg-emerald-50/70 border border-emerald-200">
+                <div class="text-[11px] text-emerald-800 font-semibold">② 목표 수량 (1차/2차)</div>
+                <div id="rp-out-shares" class="text-sm font-bold text-emerald-950 tabular-nums mt-0.5">-</div>
+                <div id="rp-out-tranche" class="text-[10px] text-emerald-700 tabular-nums">-</div>
+              </div>
+              <div class="p-2.5 rounded-xl bg-rose-50/70 border border-rose-200">
+                <div class="text-[11px] text-rose-800 font-semibold">③ 손절가 · 손절폭</div>
+                <div id="rp-out-stop" class="text-sm font-bold text-rose-950 tabular-nums mt-0.5">-</div>
+                <div id="rp-out-dist" class="text-[10px] text-rose-700 tabular-nums">-</div>
+              </div>
+              <div class="p-2.5 rounded-xl bg-slate-50 border border-slate-200">
+                <div class="text-[11px] text-slate-600 font-semibold">④ 최대 손실 한도(1R)</div>
+                <div id="rp-out-loss" class="text-sm font-bold text-slate-900 tabular-nums mt-0.5">-</div>
+              </div>
+            </div>
+
+            <div class="p-3 rounded-xl bg-slate-50 border border-slate-200 space-y-2">
+              <h4 class="text-xs font-bold text-slate-900">미너비니 기계적 단계별 실행 플랜 (진입 → -1R 손절 → +1R · +2R · +3R · 4R+ 추세추종)</h4>
+              <div id="rp-r-plan-body" class="text-[11px] text-slate-700 space-y-1.5 leading-snug">
+                티커와 투자금액을 입력하면 단계별 매매 플랜이 표시됩니다.
+              </div>
             </div>
           </div>
 
           <div class="px-3 py-2 rounded-xl bg-amber-50 border border-amber-200 text-[11px] text-amber-800">
             <strong>주의:</strong> 손절가 지정이 시장 갭 하락 시 해당 가격 체결을 보장하지 않으며, 실제 손실은 허용 손실금을 초과할 수 있습니다.
+          </div>
+        </div>
+      </div>
+
+      <!-- Full-Width Bottom: Beginner R-Multiple Guide -->
+      <div class="bg-indigo-50/70 border border-indigo-200 rounded-2xl p-4 text-xs text-indigo-950 space-y-1.5 leading-relaxed">
+        <div class="font-bold text-sm">초보자를 위한 'R(위험 단위)' 운영 원리 &amp; 왜 한도보다 적게 매수될 수 있나요?</div>
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-3 text-[11px]">
+          <div class="bg-white/80 p-2.5 rounded-xl border border-indigo-100">
+            <strong>① 1R(위험 단위)이란?</strong><br>
+            내가 정한 <strong>초기 손절폭(예: -7%)</strong>을 1배(1R)로 부릅니다. 주가가 손절폭의 1배 오르면 <strong>+1R</strong>, 2배 오르면 <strong>+2R</strong>, 3배 오르면 <strong>+3R</strong>입니다.
+          </div>
+          <div class="bg-white/80 p-2.5 rounded-xl border border-indigo-100">
+            <strong>② 딱 3R까지만 보나요? 아닙니다!</strong><br>
+            미너비니는 평균 수익 구간인 <strong>+2R~+3R(+14~21%)</strong>에서 일부를 분할 익절해 수익을 챙긴 뒤, 남은 물량은 <strong>+4R·+5R·+10R(+50~100%↑)까지 10·20일선을 타고 끝까지 보유</strong>합니다.
+          </div>
+          <div class="bg-white/80 p-2.5 rounded-xl border border-indigo-100">
+            <strong>③ 왜 내 한도(예: 100만/250만)보다 적게 나오나요?</strong><br>
+            예를 들어 한도가 100만원이어도, <strong>허용 손실(총자산 0.5% = 5만원)</strong>을 초과하지 않게 수량을 역산하기 때문입니다. 한도를 다 채워 사면 손절 시 0.5%보다 더 큰 손실이 나기 때문에 더 안전한 금액으로 자동 제한됩니다.
           </div>
         </div>
       </div>
@@ -2763,9 +2776,15 @@ python -m unittest discover -s tests -v</pre>
         const actualMaxLoss = Math.round(shares * riskPerShareKrw);
 
         rBody.innerHTML = `
-          <div class="p-2 rounded-lg bg-white border border-slate-200">
-            <strong>① 분할 매수 (${ticker || "-"} · 총 자산의 ${posWeight}% = ${posVal.toLocaleString()}원):</strong>
-            총 <strong>${shares}주</strong> 중 <strong>1차 ${tranche}주</strong>($${entry.toFixed(2)}) 먼저 매수 → 당일 종가 안착 또는 다음날 피벗 지지 확인 시 <strong>2차 ${tranche2}주</strong> 추가${limitedByBudget ? ` <span class="text-indigo-700">(종목 한도 ${stockBudget.toLocaleString()}원 기준 맞춤)</span>` : ""}
+          <div class="p-2.5 rounded-lg bg-white border border-slate-200 space-y-1">
+            <div>
+              <strong>① 분할 매수 (${ticker || "-"} · 총 자산의 ${posWeight}% = ${posVal.toLocaleString()}원):</strong>
+              총 <strong>${shares}주</strong> 중 <strong>1차 ${tranche}주</strong>($${entry.toFixed(2)}) 먼저 매수 → <strong>2차 ${tranche2}주</strong> 추가
+              <span class="text-slate-500">(${limitedByBudget ? `종목 한도 ${stockBudget.toLocaleString()}원 기준 제한` : `허용 손실 ${Math.round(allowedLoss).toLocaleString()}원 ÷ 1주 손절액 ${Math.round(riskPerShareKrw).toLocaleString()}원 = ${shares}주 — 한도 ${stockBudget.toLocaleString()}원보다 손실 제한이 우선 적용됨`})</span>
+            </div>
+            ${tranche2 > 0 ? `<div class="text-[10px] text-slate-600 bg-slate-50 px-2 py-1 rounded border border-slate-200">
+              <strong>[2차 추가 매수 예시]</strong> 장중 $${entry.toFixed(2)} 돌파 시 1차 ${tranche}주 먼저 진입한 뒤 → <strong>(당일)</strong> 장 마감 15분 전에도 $${entry.toFixed(2)} 위(일중 고가 근처)를 지키면 2차 ${tranche2}주 추가, 또는 <strong>(다음날)</strong> 장중 $${entry.toFixed(2)} 부근에서 거래량이 줄며 지지를 받고 재반등할 때 2차 ${tranche2}주 추가합니다. <em>(반대로 $${stop.toFixed(2)} 이탈 시 추가 없이 1차만 즉시 손절)</em>
+            </div>` : ""}
           </div>
           <div class="p-2 rounded-lg bg-rose-50/70 border border-rose-200 text-rose-950">
             <strong>② 하락 시 기계적 손절 (-1R · $${stop.toFixed(2)} / -${distPct}%):</strong>
