@@ -445,32 +445,6 @@ def run_sepa_pipeline(finviz_filters: Dict[str, str] = None, max_universe: int =
                     "state": sdata.get("stateOfIncorporation", ""),
                     "category": sdata.get("category", ""),
                 }
-                # Fallback: extract CEO/executive name from recent Form 4 XML in SEC submissions (401-free)
-                try:
-                    rec_f = sdata.get("filings", {}).get("recent", {})
-                    forms = rec_f.get("form", [])
-                    accs = rec_f.get("accessionNumber", [])
-                    pdocs = rec_f.get("primaryDocument", [])
-                    for f_idx, fm in enumerate(forms[:40]):
-                        if fm == "4" and f_idx < len(accs) and f_idx < len(pdocs):
-                            acc_nodash = accs[f_idx].replace("-", "")
-                            pdoc = pdocs[f_idx].split("/")[-1]
-                            f4_url = f"https://www.sec.gov/Archives/edgar/data/{int(cik_str)}/{acc_nodash}/{pdoc}"
-                            f4_req = urllib.request.Request(f4_url, headers={"User-Agent": "QuantResearchApp/2.0 (contact@quant-local.org)"})
-                            with urllib.request.urlopen(f4_req, timeout=5) as f4r:
-                                f4_xml = f4r.read().decode("utf-8", errors="ignore")
-                            if "Chief Executive Officer" in f4_xml or "CEO" in f4_xml:
-                                import re as _re
-                                nm_m = _re.search(r"<rptOwnerName>([^<]+)</rptOwnerName>", f4_xml)
-                                tt_m = _re.search(r"<officerTitle>([^<]+)</officerTitle>", f4_xml)
-                                if nm_m:
-                                    sec_prof["ceo"] = {
-                                        "name": nm_m.group(1).strip().title(),
-                                        "title": tt_m.group(1).strip() if tt_m else "CEO",
-                                    }
-                                    break
-                except Exception:
-                    pass
         except Exception:
             pass
         fin_payload = {
@@ -671,23 +645,6 @@ def run_sepa_pipeline(finviz_filters: Dict[str, str] = None, max_universe: int =
                     prof.setdefault("industry", st_info.get("industry", ""))
                     prof.setdefault("market_cap_b", st_info.get("market_cap_b"))
                     prof.setdefault("cik", st_info.get("cik", ""))
-                    if "ceo" not in prof:
-                        try:
-                            tk_info = yf.Ticker(sym).info or {}
-                            officers = tk_info.get("companyOfficers") or []
-                            ceo_obj = next((o for o in officers if "CEO" in str(o.get("title", "")).upper() or "CHIEF EXECUTIVE" in str(o.get("title", "")).upper()), officers[0] if officers else None)
-                            if ceo_obj:
-                                prof["ceo"] = {
-                                    "name": ceo_obj.get("name", ""),
-                                    "title": ceo_obj.get("title", ""),
-                                    "age": ceo_obj.get("age"),
-                                    "year_born": ceo_obj.get("yearBorn"),
-                                    "total_pay": ceo_obj.get("totalPay"),
-                                }
-                            if tk_info.get("heldPercentInsiders") is not None:
-                                prof["insider_pct"] = round(float(tk_info["heldPercentInsiders"]) * 100.0, 2)
-                        except Exception:
-                            pass
                     fin_payload["profile"] = prof
                     with open(f"data/financials/t_{sym}.json", "w", encoding="utf-8") as ff:
                         json.dump(fin_payload, ff, separators=(",", ":"))
