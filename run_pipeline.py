@@ -644,6 +644,24 @@ def run_sepa_pipeline(finviz_filters: Dict[str, str] = None, max_universe: int =
                     prof.setdefault("sector", st_info.get("sector", ""))
                     prof.setdefault("industry", st_info.get("industry", ""))
                     prof.setdefault("market_cap_b", st_info.get("market_cap_b"))
+                    prof.setdefault("cik", st_info.get("cik", ""))
+                    if "ceo" not in prof:
+                        try:
+                            tk_info = yf.Ticker(sym).info or {}
+                            officers = tk_info.get("companyOfficers") or []
+                            ceo_obj = next((o for o in officers if "CEO" in str(o.get("title", "")).upper() or "CHIEF EXECUTIVE" in str(o.get("title", "")).upper()), officers[0] if officers else None)
+                            if ceo_obj:
+                                prof["ceo"] = {
+                                    "name": ceo_obj.get("name", ""),
+                                    "title": ceo_obj.get("title", ""),
+                                    "age": ceo_obj.get("age"),
+                                    "year_born": ceo_obj.get("yearBorn"),
+                                    "total_pay": ceo_obj.get("totalPay"),
+                                }
+                            if tk_info.get("heldPercentInsiders") is not None:
+                                prof["insider_pct"] = round(float(tk_info["heldPercentInsiders"]) * 100.0, 2)
+                        except Exception:
+                            pass
                     fin_payload["profile"] = prof
                     with open(f"data/financials/t_{sym}.json", "w", encoding="utf-8") as ff:
                         json.dump(fin_payload, ff, separators=(",", ":"))
