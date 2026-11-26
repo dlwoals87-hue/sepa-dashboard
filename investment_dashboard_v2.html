@@ -721,7 +721,7 @@
       <!-- Full-Width Bottom: Beginner R-Multiple Guide -->
       <div class="bg-indigo-50/70 border border-indigo-200 rounded-2xl p-4 text-xs text-indigo-950 space-y-1.5 leading-relaxed">
         <div class="font-bold text-sm">초보자를 위한 'R(위험 단위)' 운영 원리 &amp; 왜 한도보다 적게 매수될 수 있나요?</div>
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-3 text-[11px]">
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 text-[11px]">
           <div class="bg-white/80 p-2.5 rounded-xl border border-indigo-100">
             <strong>① 1R(위험 단위)이란?</strong><br>
             내가 정한 <strong>초기 손절폭(예: -7%)</strong>을 1배(1R)로 부릅니다. 주가가 손절폭의 1배 오르면 <strong>+1R</strong>, 2배 오르면 <strong>+2R</strong>, 3배 오르면 <strong>+3R</strong>입니다.
@@ -732,7 +732,11 @@
           </div>
           <div class="bg-white/80 p-2.5 rounded-xl border border-indigo-100">
             <strong>③ 왜 내 한도(예: 100만/250만)보다 적게 나오나요?</strong><br>
-            예를 들어 한도가 100만원이어도, <strong>허용 손실(총자산 0.5% = 5만원)</strong>을 초과하지 않게 수량을 역산하기 때문입니다. 한도를 다 채워 사면 손절 시 0.5%보다 더 큰 손실이 나기 때문에 더 안전한 금액으로 자동 제한됩니다.
+            한도가 100만원이어도 <strong>허용 손실(총자산 0.5% = 5만원)</strong>을 넘지 않게 수량을 역산하기 때문입니다. 한도를 다 채우면 손절 시 0.5%보다 더 크게 잃기 때문에 더 안전한 금액으로 제한됩니다.
+          </div>
+          <div class="bg-white/80 p-2.5 rounded-xl border border-indigo-100">
+            <strong>④ 불타기(추가매수)는 언제까지 하나요?</strong><br>
+            한 번의 상승 파동에서는 <strong>1차→2차(목표 수량)</strong>까지만 채우고, 일부 익절 중엔 추매하지 않습니다. 주가가 몇 주 쉬며 <strong>새 바닥(2차 VCP)을 뚫을 때만</strong> 3차+ 불타기(최대 25% 이내)를 합니다.
           </div>
         </div>
       </div>
@@ -3050,7 +3054,7 @@ python -m unittest discover -s tests -v</pre>
                 ${suggestedStop !== null ? `<button data-raisestop="${idx}" data-newstop="${suggestedStop}" class="raisestop-btn px-2.5 py-1.5 rounded-lg text-[11px] font-bold bg-amber-100 text-amber-900 hover:bg-amber-200 border border-amber-300">${suggestedStopLabel}</button>` : ""}
                 <button data-pyr="${idx}" class="pyr-btn px-2.5 py-1.5 rounded-lg text-[11px] font-semibold bg-blue-50 text-blue-700 hover:bg-blue-100 border border-blue-200">${rem2nd > 0 ? `2차 매수 (${rem2nd}주)` : "추가매수 (불타기)"}</button>
                 ${p.shares >= 2 ? `<button data-partial="${idx}" class="partial-btn px-2.5 py-1.5 rounded-lg text-[11px] font-semibold bg-emerald-50 text-emerald-700 hover:bg-emerald-100 border border-emerald-300">일부 익절</button>` : ""}
-                <button data-closepos="${idx}" class="closepos-btn px-2.5 py-1.5 rounded-lg text-[11px] font-semibold bg-slate-800 text-white hover:bg-slate-900">매도 완료 (일지 저장)</button>
+                ${p.current_price <= p.stop_price ? `<button data-closepos="${idx}" class="closepos-btn px-2.5 py-1.5 rounded-lg text-[11px] font-bold ${isBreakevenOrHigher ? "bg-amber-600 hover:bg-amber-700" : "bg-rose-600 hover:bg-rose-700"} text-white shadow-sm">${isBreakevenOrHigher ? "보호선 매도 (일지 저장)" : "🔴 손절 매도 (일지 저장)"}</button>` : `<button data-closepos="${idx}" class="closepos-btn px-2.5 py-1.5 rounded-lg text-[11px] font-semibold bg-slate-800 text-white hover:bg-slate-900">매도 완료 (일지 저장)</button>`}
                 <button data-delpos="${idx}" class="delpos-btn px-2.5 py-1.5 rounded-lg text-[11px] font-semibold bg-rose-50 text-rose-700 hover:bg-rose-100 border border-rose-200">삭제</button>
               </div>
             </div>
@@ -3501,10 +3505,13 @@ python -m unittest discover -s tests -v</pre>
                 : `<div class="p-3 rounded-xl bg-amber-50 border border-amber-200 text-amber-950 font-semibold">🟡 현재 +${gain.toFixed(1)}% · 본전 이상 (새 피벗/+8% 도달 시 불타기 권장)</div>`);
             guideHtml = `
               ${statusBanner}
+              ${rem2nd === 0 ? `<div class="p-2.5 rounded-xl bg-purple-50 border border-purple-200 text-purple-950 text-[11px]">
+                <strong>※ 3차 이상 불타기 주의:</strong> 한 번의 상승 파동에서는 보통 <strong>1·2차로 목표 수량을 끝내고</strong>, +2R·+3R 익절 중엔 추매하지 않습니다. 주가가 몇 주 쉬면서 <strong>새로운 바닥(2차 VCP)을 만들고 새 피벗을 뚫을 때만</strong>(최대 비중 25% 이내) 추가하세요.
+              </div>` : ""}
               <div class="p-3 rounded-xl bg-slate-50 border border-slate-200 space-y-1">
                 <div class="font-bold text-slate-900">미너비니 추가매수 원칙</div>
                 ${rem2nd > 0 ? `<p>• <strong>2차 분할매수(${rem2nd}주):</strong> 1차 매수 당일 종가가 매수가($${p.avg_entry.toFixed(2)}) 위에 안착하거나, 다음날 피벗 지지 후 반등할 때 나머지 ${rem2nd}주를 채웁니다.</p>` : ""}
-                <p>• <strong>추가 불타기:</strong> 주가가 +8%($${target8Price.toFixed(2)}) 이상 오른 뒤 거래량이 줄며 쉬다가 새 고점을 뚫을 때, 기존 수량보다 적게 추가하고 손절선을 위로 올립니다.</p>
+                <p>• <strong>추가 불타기:</strong> 주가가 +8%($${target8Price.toFixed(2)}) 이상 오른 뒤 거래량이 줄며 쉬다가 새 고점을 뚫을 때, 기존 수량보다 적게 추가하고 이익보호선(손절선)을 위로 올립니다.</p>
               </div>
               <div class="p-3 rounded-xl bg-indigo-50/70 border border-indigo-200 space-y-2">
                 <div class="font-bold text-indigo-950">실제로 추가 매수했다면 바로 기록하기</div>
