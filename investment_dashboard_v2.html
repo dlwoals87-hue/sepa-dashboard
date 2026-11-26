@@ -664,6 +664,15 @@
           <div class="p-3 rounded-xl bg-amber-50 border border-amber-200 text-xs text-amber-800">
             <strong>주의:</strong> 손절가 지정이 시장 갭 하락 시 해당 가격 체결을 보장하지 않으며, 실제 손실은 허용 손실금을 초과할 수 있습니다.
           </div>
+          <div class="p-4 rounded-xl bg-slate-50 border border-slate-200 space-y-2.5">
+            <div class="flex flex-wrap items-center justify-between gap-2">
+              <h4 class="text-xs font-bold text-slate-900">미너비니 1R · 2R · 3R 기계적 매수·손절·익절 풀 플랜</h4>
+              <span id="rp-plan-price-note" class="text-[11px] text-slate-500">티커 입력 시 최근 종가로 자동 세팅</span>
+            </div>
+            <div id="rp-r-plan-body" class="text-[11px] text-slate-700 space-y-1.5 leading-relaxed">
+              티커와 총 투자금액을 입력하면 1차/2차 매수, 손절가, +1R/+2R/+3R 목표가와 행동 지침이 자동 계산됩니다.
+            </div>
+          </div>
         </div>
       </div>
     </section>
@@ -2188,7 +2197,7 @@ python -m unittest discover -s tests -v</pre>
           else cons.push("상승추세 10조건 미달 (추세 약함)");
           if (s.system_rs_rank >= 80) pros.push(`상대강도 RS ${s.system_rs_rank}점 (상위 ${100 - s.system_rs_rank}% 주도주)`);
           else cons.push(`RS ${s.system_rs_rank}점 (80점 이상 1등주 대비 탄력 약함)`);
-          if (s.eps_growth_yoy >= 20 || s.sales_growth_yoy >= 15) pros.push(`실적 성장 (EPS ${s.eps_growth_yoy ?? "-"}% · 매출 ${s.sales_growth_yoy ?? "-"}%)`);
+          if (s.eps_growth_yoy >= 20 || s.sales_growth_yoy >= 15) pros.push(`실적 성장 (EPS ${typeof s.eps_growth_yoy === "number" ? s.eps_growth_yoy : "-"}% · 매출 ${typeof s.sales_growth_yoy === "number" ? s.sales_growth_yoy : "-"}%)`);
           else cons.push("분기 실적 고성장(+20%↑) 미확인");
           if (c2Pass || c3Pass || condTightOk) pros.push(c2Pass && c3Pass ? "VCP 수축 구조 양호" : "직전 캔들 좁게 뭉침 (조건부 통과 검토)");
           else cons.push("수축 폭 거침 (7% 손절선 이탈 위험)");
@@ -2198,8 +2207,38 @@ python -m unittest discover -s tests -v</pre>
           const flipTxt = c6Pass
             ? `종가가 피벗($${pivPrice.toFixed(2)}) 아래로 대량 거래량과 함께 밀리거나 손절선($${(pivPrice * 0.93).toFixed(2)}) 이탈 시 즉시 매도·무효화`
             : `피벗($${pivPrice.toFixed(2)})을 거래량 1.40배↑로 돌파 마감 + 시장 단기폭(50일선↑) 회복 시 매수 검토로 전환`;
+          const regNow = currentRegimeData?.regime || "CAUTION";
+          const distNow = Number(s.pivot_distance_pct || 0);
+          let actBadge = "", actCls = "", actDesc = "";
+          if (s.tt_status !== "PASS" || s.system_rs_rank < 70 || (!c2Pass && !c3Pass && !condTightOk)) {
+            actBadge = "매수 보류 (자격·패턴 미달)";
+            actCls = "bg-rose-50 border-rose-200 text-rose-900";
+            actDesc = "상승추세 10조건, RS(70↑), 또는 VCP/타이트 수축 요건이 갖춰지지 않았습니다. 조건이 채워질 때까지 매수하지 마세요.";
+          } else if (distNow > 5.0) {
+            actBadge = "추격 매수 금지 (이격 과대)";
+            actCls = "bg-amber-50 border-amber-200 text-amber-900";
+            actDesc = `피벗($${pivPrice.toFixed(2)}) 대비 이미 +${distNow}% 올라 손절선(7%)까지 거리가 너무 멉니다. 다음 눌림이나 새 베이스를 기다리세요.`;
+          } else if (!c6Pass) {
+            actBadge = "진입 대기 (피벗·거래량 확인 전)";
+            actCls = "bg-slate-50 border-slate-300 text-slate-800";
+            actDesc = `자격은 갖췄으나 아직 피벗($${pivPrice.toFixed(2)}) 돌파 또는 거래량 1.40배↑(현재 ${curVolRatio}배)가 확인되지 않았습니다. 관심종목에 두고 돌파 순간을 기다리세요.`;
+          } else if (regNow === "RISK_OFF") {
+            actBadge = s.system_rs_rank >= 90 ? "소액 시범 매수 검토 (약세장 예외 · 1/4 비중)" : "매수 보류 (약세장 · 현금 방어)";
+            actCls = s.system_rs_rank >= 90 ? "bg-amber-50 border-amber-300 text-amber-950" : "bg-rose-50 border-rose-200 text-rose-900";
+            actDesc = s.system_rs_rank >= 90
+              ? `돌파·거래량·RS 90+ 주도주 요건은 충족했으나 전체 시장이 RISK_OFF입니다. 본격 비중 대신 <strong>평소 1/4 이하 소액으로만 테스트</strong>하고 <strong>$${(pivPrice * 0.93).toFixed(2)} 손절선</strong>을 엄수하세요.`
+              : `개별 돌파는 떴으나 시장이 RISK_OFF이고 RS(${s.system_rs_rank}점)가 최상위(90+)에 못 미쳐 돌파 실패 위험이 큽니다. 지수 회복 전까지 현금을 지키세요.`;
+          } else {
+            actBadge = "매수 적합 (정상 진입 검토)";
+            actCls = "bg-emerald-50 border-emerald-300 text-emerald-950";
+            actDesc = `시장 환경·상승추세·RS·차트 수축·거래량 1.40배↑ 돌파가 모두 맞물렸습니다. <strong>5. 트레이드 플랜</strong>에서 7% 손절($${(pivPrice * 0.93).toFixed(2)}) 기준으로 수량을 계산해 1차 진입을 검토하세요.`;
+          }
           return `
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-2 mt-3 text-[11px] leading-relaxed">
+            <div class="mt-3 p-3 rounded-xl border ${actCls} text-xs leading-relaxed flex flex-wrap items-center justify-between gap-2">
+              <div><span class="font-bold mr-1.5">▶ 최종 실행 판정: ${actBadge}</span><span class="text-[11px]">${actDesc}</span></div>
+              <button type="button" onclick="openTradePlanForTicker('${s.ticker}')" class="shrink-0 px-2.5 py-1 rounded-lg bg-slate-900 text-white text-[11px] font-semibold hover:bg-slate-800">이 종목으로 1R/2R/3R 플랜 짜기 →</button>
+            </div>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-2 mt-2 text-[11px] leading-relaxed">
               <div class="p-2.5 rounded-xl bg-emerald-50/70 border border-emerald-200">
                 <div class="font-bold text-emerald-900 mb-1">① 매수 찬성 근거 (강점)</div>
                 <ul class="list-disc pl-4 space-y-0.5 text-slate-700">${pros.length ? pros.map(x => `<li>${x}</li>`).join("") : "<li>뚜렷한 강점 부족</li>"}</ul>
@@ -2531,7 +2570,32 @@ python -m unittest discover -s tests -v</pre>
       }).join("");
     }
 
+    function openTradePlanForTicker(ticker) {
+      const sym = String(ticker || state.selectedTicker || "").trim().toUpperCase();
+      const s = stocks.find(x => x.ticker === sym) || stocks[0];
+      if (s) {
+        document.getElementById("rp-ticker").value = s.ticker;
+        document.getElementById("rp-entry").value = Number(s.price).toFixed(2);
+        document.getElementById("rp-tech-stop").value = (Number(s.price) * 0.93).toFixed(2);
+      }
+      calculateRiskPlanUI();
+      switchTab("tradeplan");
+    }
+
+    function syncTradePlanFromTicker(tickerVal) {
+      const sym = String(tickerVal || "").trim().toUpperCase();
+      const s = stocks.find(x => x.ticker === sym);
+      if (s) {
+        document.getElementById("rp-entry").value = Number(s.price).toFixed(2);
+        document.getElementById("rp-tech-stop").value = (Number(s.price) * 0.93).toFixed(2);
+        const noteEl = document.getElementById("rp-plan-price-note");
+        if (noteEl) noteEl.textContent = `${s.ticker} 최종 종가 $${Number(s.price).toFixed(2)} 자동 세팅`;
+      }
+      calculateRiskPlanUI();
+    }
+
     function calculateRiskPlanUI() {
+      const ticker = (document.getElementById("rp-ticker").value || "").trim().toUpperCase();
       const entry = Number(document.getElementById("rp-entry").value || 0);
       const techStopVal = document.getElementById("rp-tech-stop").value;
       const techStop = techStopVal ? Number(techStopVal) : null;
@@ -2545,30 +2609,68 @@ python -m unittest discover -s tests -v</pre>
       const distPct = entry > 0 ? +(((entry - stop) / entry) * 100).toFixed(2) : 0;
 
       const badge = document.getElementById("rp-status-badge");
+      const rBody = document.getElementById("rp-r-plan-body");
       if (entry <= 0 || stop >= entry) {
         badge.textContent = "INVALID"; badge.className = "px-2.5 py-1 rounded-lg text-xs font-bold bg-rose-100 text-rose-700";
+        if (rBody) rBody.innerHTML = `<div class="text-rose-600 font-semibold">매수 예정가는 손절가보다 높아야 합니다.</div>`;
         return null;
       }
       if (distPct > 7.0) {
         badge.textContent = "TRADE_RISK_TOO_WIDE (>7%)"; badge.className = "px-2.5 py-1 rounded-lg text-xs font-bold bg-rose-100 text-rose-700";
         document.getElementById("rp-out-shares").textContent = "0주 (진입 부적격)";
         document.getElementById("rp-out-tranche").textContent = "0주";
+        if (rBody) rBody.innerHTML = `<div class="text-rose-600 font-semibold">초기 손절폭(${distPct}%)이 미너비니 최대 허용 한도(7.0%)를 초과했습니다. 손절가를 $${(entry * 0.93).toFixed(2)} 이상으로 좁혀주세요.</div>`;
         return null;
       }
       badge.textContent = clamped ? "CAP_CLAMPED (1.0% 상한 적용)" : "OK";
       badge.className = `px-2.5 py-1 rounded-lg text-xs font-bold ${clamped ? "bg-amber-100 text-amber-800" : "bg-emerald-50 text-emerald-700"}`;
 
       const allowedLoss = equity * (riskPct / 100);
-      const riskPerShareKrw = (entry - stop) * fx;
+      const rPerShare = entry - stop;
+      const riskPerShareKrw = rPerShare * fx;
       const shares = Math.floor(allowedLoss / riskPerShareKrw);
       const tranche = Math.max(shares > 0 ? 1 : 0, Math.floor(shares * 0.5));
+      const tranche2 = Math.max(0, shares - tranche);
+      const posVal = Math.round(shares * entry * fx);
+      const posWeight = equity > 0 ? ((posVal / equity) * 100).toFixed(1) : "0.0";
+
       document.getElementById("rp-out-stop").textContent = `$${stop.toFixed(2)}`;
       document.getElementById("rp-out-dist").textContent = `${distPct}%`;
       document.getElementById("rp-out-loss").textContent = `${Math.round(allowedLoss).toLocaleString()}원`;
       document.getElementById("rp-out-shares").textContent = `${shares}주`;
       document.getElementById("rp-out-tranche").textContent = `${tranche}주`;
-      document.getElementById("rp-out-val").textContent = `${Math.round(shares * entry * fx).toLocaleString()}원`;
-      return { ticker: document.getElementById("rp-ticker").value.toUpperCase(), entry, stop, tranche };
+      document.getElementById("rp-out-val").textContent = `${posVal.toLocaleString()}원`;
+
+      if (rBody) {
+        const p1R = +(entry + rPerShare).toFixed(2);
+        const p2R = +(entry + rPerShare * 2).toFixed(2);
+        const p3R = +(entry + rPerShare * 3).toFixed(2);
+        const pct1R = +((rPerShare / entry) * 100).toFixed(1);
+        const pct2R = +(((rPerShare * 2) / entry) * 100).toFixed(1);
+        const pct3R = +(((rPerShare * 3) / entry) * 100).toFixed(1);
+        const sell13 = Math.max(1, Math.floor(shares / 3));
+        const remAfter3R = Math.max(0, shares - sell13 * 2);
+
+        rBody.innerHTML = `
+          <div class="p-2 rounded-lg bg-white border border-slate-200">
+            <strong>① 진입 계획 (${ticker || "-"} · 총 투자금 ${Math.round(equity).toLocaleString()}원의 ${posWeight}% 투입):</strong>
+            총 <strong>${shares}주</strong> (${posVal.toLocaleString()}원) → <strong>1차 시범 ${tranche}주</strong>($${entry.toFixed(2)}) 진입 후, 장중/종가 안착 확인 시 <strong>2차 ${tranche2}주</strong> 추가
+          </div>
+          <div class="p-2 rounded-lg bg-rose-50/70 border border-rose-200 text-rose-950">
+            <strong>② 하락 시 (-1R 손절):</strong> <strong>$${stop.toFixed(2)} (-${distPct}%)</strong> 터치 시 보유 전량(${shares}주) <strong>예외 없이 즉시 매도</strong> (최대 손실 ${Math.round(allowedLoss).toLocaleString()}원으로 고정)
+          </div>
+          <div class="p-2 rounded-lg bg-amber-50/70 border border-amber-200 text-amber-950">
+            <strong>③ +1R 도달 시 ($${p1R} · +${pct1R}%):</strong> 손절선을 <strong>매수가(본전 $${entry.toFixed(2)})</strong>로 즉시 상향 이동 → 이 순간부터 손실 0원(무위험) 확정
+          </div>
+          <div class="p-2 rounded-lg bg-emerald-50/70 border border-emerald-200 text-emerald-950">
+            <strong>④ +2R 도달 시 ($${p2R} · +${pct2R}%):</strong> <strong>${sell13}주(1/3) 분할 익절</strong>로 수익 확정 + 남은 ${Math.max(0, shares - sell13)}주의 손절선을 <strong>+1R($${p1R})</strong>로 상향
+          </div>
+          <div class="p-2 rounded-lg bg-indigo-50/70 border border-indigo-200 text-indigo-950">
+            <strong>⑤ +3R 도달 시 ($${p3R} · +${pct3R}%):</strong> 추가 <strong>${sell13}주(1/3) 익절</strong> + 최종 잔여 <strong>${remAfter3R}주</strong>는 <strong>10일선/20일선 종가 이탈 시까지 추세 추종(트레일링)</strong>
+          </div>
+        `;
+      }
+      return { ticker, entry, stop, tranche };
     }
 
     function renderPositionsTab() {
@@ -2658,15 +2760,10 @@ python -m unittest discover -s tests -v</pre>
     }));
 
     document.getElementById("btn-goto-setup").addEventListener("click", () => switchTab("setups"));
-    document.getElementById("btn-goto-plan").addEventListener("click", () => {
-      const s = stocks.find(x => x.ticker === state.selectedTicker) || stocks[0];
-      if (s) {
-        document.getElementById("rp-ticker").value = s.ticker;
-        document.getElementById("rp-entry").value = s.price;
-        document.getElementById("rp-tech-stop").value = +(s.price * 0.93).toFixed(2);
-        calculateRiskPlanUI();
-      }
-      switchTab("tradeplan");
+    document.getElementById("btn-goto-plan").addEventListener("click", () => openTradePlanForTicker(state.selectedTicker));
+    document.getElementById("rp-ticker").addEventListener("change", e => syncTradePlanFromTicker(e.target.value));
+    ["rp-entry", "rp-tech-stop", "rp-risk-pct", "rp-equity", "rp-fx"].forEach(id => {
+      document.getElementById(id).addEventListener("input", calculateRiskPlanUI);
     });
 
     document.getElementById("mode-sepa-btn").addEventListener("click", () => {
@@ -2860,8 +2957,8 @@ python -m unittest discover -s tests -v</pre>
         price: Number(x.price || 100), pe: Number(x.pe || 25), roe: Number(x.roe || 15), divYield: Number(x.divYield || 0),
         system_rs_rank: Number(x.system_rs_rank || 75), rs_tier: x.rs_tier || "Watch", rs_3m_pct: x.rs_3m_pct ?? null, rs_6m_pct: x.rs_6m_pct ?? null, rs_12m_pct: x.rs_12m_pct ?? null,
         tt_status: x.tt_status || "PASS", fail_reasons: x.fail_reasons || [],
-        eps_growth_yoy: x.fundamentals?.eps_growth_yoy ?? x.eps_growth_yoy ?? "N/A",
-        sales_growth_yoy: x.fundamentals?.sales_growth_yoy ?? x.sales_growth_yoy ?? "N/A",
+        eps_growth_yoy: (typeof (x.fundamentals?.eps_growth_yoy ?? x.eps_growth_yoy) === "number") ? (x.fundamentals?.eps_growth_yoy ?? x.eps_growth_yoy) : null,
+        sales_growth_yoy: (typeof (x.fundamentals?.sales_growth_yoy ?? x.sales_growth_yoy) === "number") ? (x.fundamentals?.sales_growth_yoy ?? x.sales_growth_yoy) : null,
         eps_trend: x.fundamentals?.eps_trend || "확인 불가",
         market_cap_b: x.market_cap_b ?? null, in_sp500: !!x.in_sp500, in_ndx100: !!x.in_ndx100,
         peak_2y: x.peak_2y ?? null, low_prior_2y: x.low_prior_2y ?? null,
@@ -2897,6 +2994,8 @@ python -m unittest discover -s tests -v</pre>
       document.getElementById("data-mode-badge").textContent = `실제 파이프라인 데이터 (${stocks.length}종목 · ${parsed.trade_date || "최신"})`;
       document.getElementById("data-mode-badge").className = "px-2 py-0.5 rounded-full text-[11px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200";
       state.selectedTicker = stocks[0].ticker;
+      document.getElementById("rp-ticker").value = stocks[0].ticker;
+      syncTradePlanFromTicker(stocks[0].ticker);
       renderDashboard();
       if (!skipSave) savePayloadToIDB(parsed);
       showToast(`${stocks.length}개 종목 로드 및 자동 저장 완료`);
@@ -3513,7 +3612,7 @@ python -m unittest discover -s tests -v</pre>
                 <strong class="text-slate-900">Q1. [오닐 C · 미너비니 실적] 최근 분기 이익과 매출이 강하게 성장·가속하고 있나요?</strong>
                 ${qBadge(q1Pass)}
               </div>
-              <p class="text-slate-600 mt-1"><strong>현재 수치:</strong> 분기 EPS 전년동기대비(YoY) ${s.eps_growth_yoy != null ? `${s.eps_growth_yoy > 0 ? "+" : ""}${s.eps_growth_yoy}%` : "미수집"} · 매출 YoY ${s.sales_growth_yoy != null ? `${s.sales_growth_yoy > 0 ? "+" : ""}${s.sales_growth_yoy}%` : "미수집"} (${lastQLabel}${lastQYoy != null ? `, EPS YoY ${lastQYoy}%` : ""})<br><strong>왜 묻나요?</strong> 큰 시세를 내는 주식은 주가가 오르기 전·후로 반드시 <strong>분기 이익(20~25%↑)과 매출(15%↑)이 함께 가속</strong>하는 '어닝 서프라이즈'가 나타납니다.</p>
+              <p class="text-slate-600 mt-1"><strong>현재 수치:</strong> 분기 EPS 전년동기대비(YoY) ${typeof s.eps_growth_yoy === "number" ? `${s.eps_growth_yoy > 0 ? "+" : ""}${s.eps_growth_yoy}%` : "미수집"} · 매출 YoY ${typeof s.sales_growth_yoy === "number" ? `${s.sales_growth_yoy > 0 ? "+" : ""}${s.sales_growth_yoy}%` : "미수집"} (${lastQLabel}${lastQYoy != null ? `, EPS YoY ${lastQYoy}%` : ""})<br><strong>왜 묻나요?</strong> 큰 시세를 내는 주식은 주가가 오르기 전·후로 반드시 <strong>분기 이익(20~25%↑)과 매출(15%↑)이 함께 가속</strong>하는 '어닝 서프라이즈'가 나타납니다.</p>
             </div>
 
             <div class="p-2.5 rounded-xl bg-white border border-slate-200">
@@ -3602,7 +3701,7 @@ python -m unittest discover -s tests -v</pre>
                   name: "실적 성장 및 성장 가속화 기여도", max: 20,
                   evaluated: s.eps_growth_yoy != null || s.sales_growth_yoy != null,
                   score: (s.eps_growth_yoy >= 25 && s.accel_eps) ? 19 : (s.eps_growth_yoy >= 20 || s.sales_growth_yoy >= 15) ? 15 : 9,
-                  evidence: `분기 EPS YoY ${s.eps_growth_yoy ?? "-"}% · 매출 YoY ${s.sales_growth_yoy ?? "-"}% (${s.accel_eps ? "가속 중" : "추세 확인"})`,
+                  evidence: `분기 EPS YoY ${typeof s.eps_growth_yoy === "number" ? s.eps_growth_yoy : "-"}% · 매출 YoY ${typeof s.sales_growth_yoy === "number" ? s.sales_growth_yoy : "-"}% (${s.accel_eps ? "가속 중" : "추세 확인"})`,
                   src: "SEC EDGAR XBRL 실적 데이터"
                 },
                 {
@@ -3720,7 +3819,7 @@ python -m unittest discover -s tests -v</pre>
                 <details class="bg-white rounded-xl border border-slate-200 p-2.5">
                   <summary class="font-bold text-slate-900 cursor-pointer">4. 미너비니 · 오닐 · 가드너 3대 관점 종합 &amp; 위험요인 점검</summary>
                   <div class="mt-2 space-y-1.5 text-[10px] text-slate-700">
-                    <div class="p-2 rounded bg-slate-50"><strong>• 마크 미너비니 (핵심 전략 — 실적 가속·촉매):</strong> 최근 EPS YoY <strong>${s.eps_growth_yoy ?? "-"}%</strong>, 매출 YoY <strong>${s.sales_growth_yoy ?? "-"}%</strong>로 경영진의 전략이 실제 숫자로 증명되고 있는지 확인합니다.</div>
+                    <div class="p-2 rounded bg-slate-50"><strong>• 마크 미너비니 (핵심 전략 — 실적 가속·촉매):</strong> 최근 EPS YoY <strong>${typeof s.eps_growth_yoy === "number" ? s.eps_growth_yoy : "-"}%</strong>, 매출 YoY <strong>${typeof s.sales_growth_yoy === "number" ? s.sales_growth_yoy : "-"}%</strong>로 경영진의 전략이 실제 숫자로 증명되고 있는지 확인합니다.</div>
                     <div class="p-2 rounded bg-slate-50"><strong>• 윌리엄 오닐 (성과·이해관계):</strong> 신제품/신사업 모멘텀과 함께 내부자 지분(<strong>${insPct}</strong>) 및 RS <strong>${s.system_rs_rank}점</strong>이 시장 선도력으로 이어지는지 봅니다.</div>
                     <div class="p-2 rounded bg-slate-50"><strong>• 데이비드 가드너 (장기 비전·Rule Breaker):</strong> 일회성 실적 개선을 넘어 장기 해자·혁신 문화·후계 구도가 탄탄한지 위 공시·인터뷰 링크로 정성 검증하세요.</div>
                     <div class="p-2 rounded bg-rose-50/70 border border-rose-100 text-rose-900"><strong>• 필수 위험 점검:</strong> 지나친 낙관 가이던스 반복, 과도한 주식기반보상(SBC) 및 주주 희석, 핵심 임원 집단 이탈 여부를 SEC DEF 14A/Form 4에서 반드시 확인하세요.</div>

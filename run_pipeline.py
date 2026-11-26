@@ -445,6 +445,32 @@ def run_sepa_pipeline(finviz_filters: Dict[str, str] = None, max_universe: int =
                     "state": sdata.get("stateOfIncorporation", ""),
                     "category": sdata.get("category", ""),
                 }
+                # Fallback: extract CEO/executive name from recent Form 4 XML in SEC submissions (401-free)
+                try:
+                    rec_f = sdata.get("filings", {}).get("recent", {})
+                    forms = rec_f.get("form", [])
+                    accs = rec_f.get("accessionNumber", [])
+                    pdocs = rec_f.get("primaryDocument", [])
+                    for f_idx, fm in enumerate(forms[:40]):
+                        if fm == "4" and f_idx < len(accs) and f_idx < len(pdocs):
+                            acc_nodash = accs[f_idx].replace("-", "")
+                            pdoc = pdocs[f_idx].split("/")[-1]
+                            f4_url = f"https://www.sec.gov/Archives/edgar/data/{int(cik_str)}/{acc_nodash}/{pdoc}"
+                            f4_req = urllib.request.Request(f4_url, headers={"User-Agent": "QuantResearchApp/2.0 (contact@quant-local.org)"})
+                            with urllib.request.urlopen(f4_req, timeout=5) as f4r:
+                                f4_xml = f4r.read().decode("utf-8", errors="ignore")
+                            if "Chief Executive Officer" in f4_xml or "CEO" in f4_xml:
+                                import re as _re
+                                nm_m = _re.search(r"<rptOwnerName>([^<]+)</rptOwnerName>", f4_xml)
+                                tt_m = _re.search(r"<officerTitle>([^<]+)</officerTitle>", f4_xml)
+                                if nm_m:
+                                    sec_prof["ceo"] = {
+                                        "name": nm_m.group(1).strip().title(),
+                                        "title": tt_m.group(1).strip() if tt_m else "CEO",
+                                    }
+                                    break
+                except Exception:
+                    pass
         except Exception:
             pass
         fin_payload = {
