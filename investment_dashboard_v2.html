@@ -1401,11 +1401,23 @@ python -m unittest discover -s tests -v</pre>
     let stocks = JSON.parse(JSON.stringify(DEMO_STOCKS));
     let universeStats = { total_scanned: 6330, eligible_count: 1780, sp500_total: 500, ndx100_total: 101 };
     let currentRegimeData = null;
-    let watchlist = new Set(["NVDA", "PLTR", "GOOGL"]);
+    const LS_WATCH_KEY = "sepa_v2_watchlist";
+    const LS_POS_KEY = "sepa_v2_open_positions";
+    const LS_JOURNAL_KEY = "sepa_v2_journal_trades";
+    function loadLsJson(key, fallback) {
+      try { const raw = localStorage.getItem(key); return raw ? JSON.parse(raw) : fallback; } catch (e) { return fallback; }
+    }
+    function saveUserState() {
+      try {
+        localStorage.setItem(LS_WATCH_KEY, JSON.stringify([...watchlist]));
+        localStorage.setItem(LS_POS_KEY, JSON.stringify(openPositions));
+        localStorage.setItem(LS_JOURNAL_KEY, JSON.stringify(journalTrades));
+      } catch (e) {}
+    }
+
+    let watchlist = new Set(loadLsJson(LS_WATCH_KEY, []));
     let currentTradeDate = "데모 기준";
-    let openPositions = [
-      { ticker: "PLTR", shares: 10, avg_entry: 56.0, current_price: 61.8, initial_stop: 52.1, stop_price: 54.0, stop_source: "VALIDATED_TECHNICAL_STOP", price_date: "데모 기준", realized_pnl_usd: 0, realized_shares: 0 }
-    ];
+    let openPositions = loadLsJson(LS_POS_KEY, []);
     function formatUpdateTimestamp(isoStr) {
       try {
         const d = isoStr ? new Date(isoStr) : new Date(document.lastModified || Date.now());
@@ -1456,12 +1468,9 @@ python -m unittest discover -s tests -v</pre>
           applyAutoStopRatchet(p);
         }
       });
+      saveUserState();
     }
-    let journalTrades = [
-      { id: "T-001", record_type: "LIVE", ticker: "NVDA", regime: "RISK_ON", setup: "VCP_VALIDATED", entry_price: 112.0, exit_price: 131.6, initial_stop: 104.2, rule_compliant: true, note: "피벗 돌파 거래량 1.65x 확인 후 진입, +2.5R 분할익절" },
-      { id: "T-002", record_type: "LIVE", ticker: "AMD", regime: "CAUTION", setup: "VCP_CANDIDATE", entry_price: 158.0, exit_price: 147.0, initial_stop: 147.0, rule_compliant: true, note: "돌파 실패 후 7% 손절선 기계적 준수 (-1.0R)" },
-      { id: "T-003", record_type: "SIMULATION", ticker: "AXON", regime: "RISK_ON", setup: "VCP_VALIDATED", entry_price: 420.0, exit_price: 504.0, initial_stop: 392.0, rule_compliant: true, note: "백테스트 시뮬레이션 검증 샘플 (+3.0R)" }
-    ];
+    let journalTrades = loadLsJson(LS_JOURNAL_KEY, []);
 
     const state = {
       activeTab: "dashboard",
@@ -3150,6 +3159,27 @@ python -m unittest discover -s tests -v</pre>
                 <span class="text-[11px] font-normal">현재 ${isBreakevenOrHigher ? "이익보호선" : "손절가"} <strong>$${p.stop_price.toFixed(2)} (${stopDistPct >= 0 ? "+" : ""}${stopDistPct.toFixed(1)}%)</strong> · ${stopText}</span>
               </div>
 
+              <!-- Visual R-Progress Bar (평균매수가 0R -> +1R -> +2R -> +3R -> +4R+) -->
+              <div class="p-3 rounded-xl bg-slate-50 border border-slate-200 space-y-2">
+                <div class="flex flex-wrap items-center justify-between gap-2 text-[11px]">
+                  <span class="font-bold text-slate-800">평균매수가($${p.avg_entry.toFixed(2)}) 대비 현재 진행도</span>
+                  <span class="font-bold ${curRNum >= 4 ? "text-purple-700" : curRNum >= 2 ? "text-emerald-700" : curRNum >= 1 ? "text-amber-700" : curRNum >= 0 ? "text-sky-700" : "text-rose-700"}">
+                    ${curRNum >= 4 ? `🚀 +4R 이상 돌파 완료! (현재 +${curR}R · +${pnlPct.toFixed(1)}%)` : curRNum >= 1 ? `✓ +${Math.floor(curRNum)}R 돌파! (현재 +${curR}R · +${pnlPct.toFixed(1)}%)` : curRNum >= 0 ? `진행 중 (${curR}R · +${pnlPct.toFixed(1)}%)` : `주의 (${curR}R · ${pnlPct.toFixed(1)}%)`}
+                  </span>
+                </div>
+                <div class="relative h-3 w-full rounded-full bg-slate-200 overflow-hidden">
+                  <div class="h-full rounded-full transition-all duration-300 ${curRNum >= 4 ? "bg-gradient-to-r from-emerald-500 via-indigo-500 to-purple-600" : curRNum >= 2 ? "bg-gradient-to-r from-amber-400 to-emerald-500" : curRNum >= 1 ? "bg-amber-400" : curRNum >= 0 ? "bg-sky-500" : "bg-rose-500"}" style="width: ${Math.max(4, Math.min(100, ((curRNum + 1) / 5) * 100)).toFixed(1)}%"></div>
+                </div>
+                <div class="grid grid-cols-6 text-[10px] text-center font-semibold text-slate-500 tabular-nums">
+                  <span class="${curRNum < 0 ? "text-rose-600 font-bold" : ""}">손절(-1R)</span>
+                  <span class="text-slate-800 font-bold">평균가(0R)</span>
+                  <span class="${p.current_price >= p1R ? "text-amber-700 font-bold" : ""}">+1R ${p.current_price >= p1R ? "✓" : ""}</span>
+                  <span class="${p.current_price >= p2R ? "text-emerald-700 font-bold" : ""}">+2R ${p.current_price >= p2R ? "✓" : ""}</span>
+                  <span class="${p.current_price >= p3R ? "text-indigo-700 font-bold" : ""}">+3R ${p.current_price >= p3R ? "✓" : ""}</span>
+                  <span class="${p.current_price >= p4R ? "text-purple-700 font-bold" : ""}">+4R+ ${p.current_price >= p4R ? "✓" : ""}</span>
+                </div>
+              </div>
+
               <!-- 7-Step Time-Series Roadmap Strip -->
               <div class="grid grid-cols-2 sm:grid-cols-7 gap-2 text-[11px] tabular-nums">
                 <div class="p-2 rounded-xl ${isBreakevenOrHigher ? "bg-amber-50/70 border-amber-200" : "bg-rose-50/70 border-rose-200"} border">
@@ -3167,22 +3197,22 @@ python -m unittest discover -s tests -v</pre>
                   <div class="font-bold text-slate-950 text-xs mt-0.5">$${p.current_price.toFixed(2)} <span class="text-[10px] font-bold ${pnlPct >= 0 ? "text-emerald-700" : "text-rose-700"}">(${pnlPct >= 0 ? "+" : ""}${pnlPct.toFixed(1)}%)</span></div>
                   <div class="text-[10px] font-semibold ${curRNum >= 0 ? "text-emerald-700" : "text-rose-700"}">${curRNum >= 0 ? "+" : ""}${curR}R</div>
                 </div>
-                <div class="p-2 rounded-xl border ${p.current_price >= p1R ? "bg-amber-50 border-amber-300" : "bg-slate-50/60 border-slate-200"}">
+                <div class="p-2 rounded-xl border ${p.current_price >= p1R ? "bg-amber-50 border-2 border-amber-400 shadow-sm" : "bg-slate-50/60 border border-dashed border-slate-300 opacity-85"}">
                   <div class="text-[10px] font-semibold ${p.current_price >= p1R ? "text-amber-800" : "text-slate-500"}">+1R 목표 ${p.current_price >= p1R ? "✓달성" : ""}</div>
                   <div class="font-bold text-slate-900 text-xs mt-0.5">$${p1R.toFixed(2)} <span class="text-[10px] font-semibold text-amber-700">(+${pct1R}%)</span></div>
                   <div class="text-[10px] text-slate-600">매도 없음 · 보호선→본전</div>
                 </div>
-                <div class="p-2 rounded-xl border ${p.current_price >= p2R ? "bg-emerald-50 border-emerald-300" : "bg-slate-50/60 border-slate-200"}">
+                <div class="p-2 rounded-xl border ${p.current_price >= p2R ? "bg-emerald-50 border-2 border-emerald-400 shadow-sm" : "bg-slate-50/60 border border-dashed border-slate-300 opacity-85"}">
                   <div class="text-[10px] font-semibold ${p.current_price >= p2R ? "text-emerald-800" : "text-slate-500"}">+2R 목표 ${p.current_price >= p2R ? "✓달성" : ""}</div>
                   <div class="font-bold text-slate-900 text-xs mt-0.5">$${p2R.toFixed(2)} <span class="text-[10px] font-semibold text-emerald-700">(+${pct2R}%)</span></div>
                   <div class="text-[10px] text-slate-600">${text2R}</div>
                 </div>
-                <div class="p-2 rounded-xl border ${p.current_price >= p3R ? "bg-indigo-50 border-indigo-300" : "bg-slate-50/60 border-slate-200"}">
+                <div class="p-2 rounded-xl border ${p.current_price >= p3R ? "bg-indigo-50 border-2 border-indigo-400 shadow-sm" : "bg-slate-50/60 border border-dashed border-slate-300 opacity-85"}">
                   <div class="text-[10px] font-semibold ${p.current_price >= p3R ? "text-indigo-800" : "text-slate-500"}">+3R 목표 ${p.current_price >= p3R ? "✓달성" : ""}</div>
                   <div class="font-bold text-slate-900 text-xs mt-0.5">$${p3R.toFixed(2)} <span class="text-[10px] font-semibold text-indigo-700">(+${pct3R}%)</span></div>
                   <div class="text-[10px] text-slate-600">${text3R}</div>
                 </div>
-                <div class="p-2 rounded-xl border ${p.current_price >= p4R ? "bg-purple-50 border-purple-300" : "bg-slate-50/60 border-slate-200"}">
+                <div class="p-2 rounded-xl border ${p.current_price >= p4R ? "bg-purple-50 border-2 border-purple-400 shadow-sm" : "bg-slate-50/60 border border-dashed border-slate-300 opacity-85"}">
                   <div class="text-[10px] font-semibold ${p.current_price >= p4R ? "text-purple-800" : "text-slate-500"}">+4R 이상 ${p.current_price >= p4R ? "✓대시세" : ""}</div>
                   <div class="font-bold text-slate-900 text-xs mt-0.5">$${p4R.toFixed(2)}↑ <span class="text-[10px] font-semibold text-purple-700">(+${pct4R}%↑)</span></div>
                   <div class="text-[10px] text-slate-600">${smaHint}</div>
@@ -3242,6 +3272,7 @@ python -m unittest discover -s tests -v</pre>
         e.stopPropagation();
         const t = sb.dataset.star;
         watchlist.has(t) ? watchlist.delete(t) : watchlist.add(t);
+        saveUserState();
         renderDashboard();
         return;
       }
@@ -3382,6 +3413,7 @@ python -m unittest discover -s tests -v</pre>
       const _buyStock = stocks.find(x => x.ticker === plan.ticker);
       const _buyDate = (_buyStock && Array.isArray(_buyStock.dates) && _buyStock.dates.length) ? _buyStock.dates[_buyStock.dates.length - 1] : new Date().toISOString().slice(0, 10);
       openPositions.push({ ticker: plan.ticker, shares: plan.tranche, planned_shares: plan.totalShares || plan.tranche, avg_entry: plan.entry, current_price: plan.entry, initial_stop: plan.stop, stop_price: plan.stop, stop_source: "VALIDATED_TECHNICAL_STOP", price_date: currentTradeDate, buy_date: _buyDate, realized_pnl_usd: 0, realized_shares: 0 });
+      saveUserState();
       showToast(`${plan.ticker} ${plan.tranche}주 1차 편입 완료`);
       renderDashboard();
       switchTab("positions");
@@ -3453,6 +3485,7 @@ python -m unittest discover -s tests -v</pre>
       renderDashboard();
       renderPositionsTab();
       renderJournalTab();
+      saveUserState();
       showToast(`${p.ticker} ${qty}주 일부 익절 완료! 7. 매매 일지에 저장되었습니다.`);
     });
 
@@ -3486,6 +3519,7 @@ python -m unittest discover -s tests -v</pre>
         if (p && newStop > p.stop_price) {
           p.stop_price = newStop;
           renderPositionsTab();
+          saveUserState();
           showToast(`${p.ticker} 손절선을 $${newStop.toFixed(2)}로 상향했습니다`);
         }
         return;
@@ -3638,6 +3672,7 @@ python -m unittest discover -s tests -v</pre>
               modal.classList.remove("flex");
               renderDashboard();
               renderPositionsTab();
+              saveUserState();
               showToast(`${p.ticker} ${addQty}주 추가매수 반영! (총 ${newShares}주 · 새 평단가 $${newAvg.toFixed(2)})`);
             });
           }
@@ -3654,6 +3689,7 @@ python -m unittest discover -s tests -v</pre>
         renderDashboard();
         renderPositionsTab();
         renderJournalTab();
+        saveUserState();
         showToast(`${p.ticker} 매도 완료! 7. 매매 일지에 자동 저장되었습니다.`);
         return;
       }
@@ -3666,6 +3702,7 @@ python -m unittest discover -s tests -v</pre>
           openPositions.splice(idx, 1);
           renderDashboard();
           renderPositionsTab();
+          saveUserState();
           showToast(`${p.ticker} 보유 내역을 삭제했습니다`);
         }
       }
