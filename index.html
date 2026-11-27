@@ -759,23 +759,27 @@
           </div>
         </div>
 
-        <!-- Beginner 4-Step Action Strip -->
-        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2 text-[11px]">
+        <!-- Beginner 5-Step Chronological Action Strip -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-2 text-[11px]">
           <div class="p-2.5 rounded-xl bg-rose-50/70 border border-rose-200 text-rose-950">
-            <strong>① 손실 중 물타기 금지</strong><br>
-            주가가 떨어질 때 더 사지 말고, 정해진 손절가에 닿으면 즉시 전량 팝니다.
+            <strong>① 1차 진입 · 물타기 금지</strong><br>
+            목표의 절반(1차)만 먼저 삽니다. 내 매수가 아래로 내려가면 더 사지 말고 손절가에서 전량 매도합니다.
+          </div>
+          <div class="p-2.5 rounded-xl bg-blue-50/70 border border-blue-200 text-blue-950">
+            <strong>② 2차 매수 (나머지 절반)</strong><br>
+            <strong>당일 종가 안착</strong> 또는 1~3일 내 <strong>+0~5% 이내 지지</strong> 시 남은 2차 수량을 채웁니다. (+5%↑ 급등 시 추격 금지)
           </div>
           <div class="p-2.5 rounded-xl bg-amber-50/70 border border-amber-200 text-amber-950">
-            <strong>② +1R 도달 → 손절선 본전 이동</strong><br>
-            손절폭만큼 오르면 손절가를 내 매수가로 올려 '손실 0원 거래'로 만듭니다.
+            <strong>③ +1R → 보호선 본전 이동</strong><br>
+            손절폭만큼 오르면 이익보호선을 매수가(0%)로 올려 '손실 0원 거래'로 만듭니다.
           </div>
           <div class="p-2.5 rounded-xl bg-emerald-50/70 border border-emerald-200 text-emerald-950">
-            <strong>③ +2R·+3R 분할 익절</strong><br>
-            +2R·+3R 구간에서 일부 수익을 챙기고, 손절선도 같이 올려 수익을 잠급니다.
+            <strong>④ +2R·+3R 분할 익절</strong><br>
+            1/3씩 팔아 수익을 챙기고, 이익보호선을 +1R·+2R로 올려 수익을 잠급니다.
           </div>
           <div class="p-2.5 rounded-xl bg-indigo-50/70 border border-indigo-200 text-indigo-950">
-            <strong>④ 손절선은 절대 내리지 않기</strong><br>
-            남은 물량은 10·20일선을 타고 끝까지 보유하되, 추세가 깨지면 팔아 큰 폭락을 피합니다.
+            <strong>⑤ +4R+ 대시세 · 새 바닥 불타기</strong><br>
+            잔여 물량은 10·20일선 타고 끝까지 보유. 몇 주 쉬며 <strong>새 VCP 돌파</strong> 시에만 3차+ 불타기(25% 이내).
           </div>
         </div>
 
@@ -784,7 +788,7 @@
 
         <!-- Button Guide -->
         <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2.5 p-3 rounded-xl bg-slate-50 border border-slate-200 text-[11px] text-slate-700">
-          <div><strong class="text-blue-700">2차·추가매수 체크:</strong> 내 매수가보다 올라서 수익 중(+8% 이상)일 때만 추가 매수(불타기)가 가능한지 확인합니다. (손실 중 물타기 차단)</div>
+          <div><strong class="text-blue-700">2차 매수 / 추가매수:</strong> 1차 매수 후 +0~5% 이내 안착 시 남은 2차 수량을 채우거나, 목표 완료 후 <strong>새 바닥(2차 VCP) 돌파 시</strong> 불타기 수량·금액을 기록합니다.</div>
           <div><strong class="text-emerald-700">일부 익절 (수량 차감):</strong> +2R·+3R에서 일부 주수(예: 3주)만 팔았을 때 누르세요. 보유 수량은 줄고 판 수익은 <strong>7. 매매 일지</strong>에 바로 저장됩니다.</div>
           <div><strong class="text-slate-900">매도 완료 (일지 저장):</strong> 남은 주식을 모두 팔았을 때 누르면 보유목록에서 빠지고 <strong>7. 매매 일지</strong>에 최종 기록됩니다.</div>
           <div><strong class="text-rose-700">삭제:</strong> 실수로 잘못 등록했을 때 매매일지에 남기지 않고 목록에서만 바로 지웁니다.</div>
@@ -3541,14 +3545,16 @@ python -m unittest discover -s tests -v</pre>
         const idx = Number(pyr.dataset.pyr);
         const p = openPositions[idx];
         if (!p) return;
+        const fx = Number(document.getElementById("rp-fx")?.value) || 1400;
         const gain = ((p.current_price - p.avg_entry) / p.avg_entry) * 100;
-        const target8Price = +(p.avg_entry * 1.08).toFixed(2);
+        const buyZoneMax = +(p.avg_entry * 1.05).toFixed(2);
         const rem2nd = (p.planned_shares && p.planned_shares > p.shares) ? (p.planned_shares - p.shares) : 0;
         const suggestedAddShares = rem2nd > 0 ? rem2nd : Math.max(1, Math.floor(p.shares * 0.5));
+        const suggestedAddKrw = Math.round(suggestedAddShares * p.current_price * fx);
         const modal = document.getElementById("pyramid-guide-modal");
         const titleEl = document.getElementById("pyr-modal-title");
         const bodyEl = document.getElementById("pyr-modal-body");
-        if (titleEl) titleEl.textContent = `${p.ticker} — ${rem2nd > 0 ? "2차 분할매수 & 추가매수(불타기)" : "추가매수(불타기) 판단 & 기록"}`;
+        if (titleEl) titleEl.textContent = `${p.ticker} — ${rem2nd > 0 ? `2차 분할매수 (${rem2nd}주)` : "3차+ 추가매수(불타기) 판단"}`;
         if (bodyEl) {
           let guideHtml = "";
           if (p.current_price < p.avg_entry - 0.001) {
@@ -3562,24 +3568,47 @@ python -m unittest discover -s tests -v</pre>
                 <p>• 가격이 더 떨어져 손절가(<strong>$${p.stop_price.toFixed(2)}</strong>)에 닿으면 보유 중인 <strong>${p.shares}주 전량 매도</strong>하세요.</p>
               </div>
             `;
-          } else {
-            const statusBanner = rem2nd > 0
-              ? `<div class="p-3 rounded-xl bg-blue-50 border border-blue-200 text-blue-950 font-semibold">🔵 5. 트레이드 플랜 2차 매수 대기 중 (1차 ${p.shares}주 보유 · 2차 ${rem2nd}주 예정)</div>`
-              : (gain >= 8
-                ? `<div class="p-3 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-950 font-semibold">🟢 불타기(추가매수) 기준 충족! (+${gain.toFixed(1)}% 수익 중)</div>`
-                : `<div class="p-3 rounded-xl bg-amber-50 border border-amber-200 text-amber-950 font-semibold">🟡 현재 +${gain.toFixed(1)}% · 본전 이상 (새 피벗/+8% 도달 시 불타기 권장)</div>`);
+          } else if (rem2nd > 0) {
+            const inBuyZone = gain <= 5.0;
+            const statusBanner = inBuyZone
+              ? `<div class="p-3 rounded-xl bg-blue-50 border border-blue-200 text-blue-950 font-semibold">🔵 2차 분할매수 가능 구간! (현재 +${gain.toFixed(1)}% · 매수 유효범위 +5% 이내)</div>`
+              : `<div class="p-3 rounded-xl bg-amber-50 border border-amber-200 text-amber-950 font-semibold">⚠️ 이미 +${gain.toFixed(1)}% 상승 (+5% 초과) — 추격 매수 주의!</div>`;
             guideHtml = `
               ${statusBanner}
-              ${rem2nd === 0 ? `<div class="p-2.5 rounded-xl bg-purple-50 border border-purple-200 text-purple-950 text-[11px]">
-                <strong>※ 3차 이상 불타기 주의:</strong> 한 번의 상승 파동에서는 보통 <strong>1·2차로 목표 수량을 끝내고</strong>, +2R·+3R 익절 중엔 추매하지 않습니다. 주가가 몇 주 쉬면서 <strong>새로운 바닥(2차 VCP)을 만들고 새 피벗을 뚫을 때만</strong>(최대 비중 25% 이내) 추가하세요.
-              </div>` : ""}
-              <div class="p-3 rounded-xl bg-slate-50 border border-slate-200 space-y-1">
-                <div class="font-bold text-slate-900">미너비니 추가매수 원칙</div>
-                ${rem2nd > 0 ? `<p>• <strong>2차 분할매수(${rem2nd}주):</strong> 1차 매수 당일 종가가 매수가($${p.avg_entry.toFixed(2)}) 위에 안착하거나, 다음날 피벗 지지 후 반등할 때 나머지 ${rem2nd}주를 채웁니다.</p>` : ""}
-                <p>• <strong>추가 불타기:</strong> 주가가 +8%($${target8Price.toFixed(2)}) 이상 오른 뒤 거래량이 줄며 쉬다가 새 고점을 뚫을 때, 기존 수량보다 적게 추가하고 이익보호선(손절선)을 위로 올립니다.</p>
+              <div class="p-3 rounded-xl bg-slate-50 border border-slate-200 space-y-1.5">
+                <div class="font-bold text-slate-900">미너비니 2차 매수 타이밍과 금액</div>
+                <p>• <strong>얼마나 사나요?</strong> 5번 트레이드 플랜에서 정한 나머지 <strong>${rem2nd}주 (약 ${suggestedAddKrw.toLocaleString()}원)</strong>를 매수해 총 <strong>${p.planned_shares}주</strong>를 채웁니다.</p>
+                <p>• <strong>언제 사나요?</strong> <strong>+8%까지 기다리는 것이 아닙니다!</strong> ① 1차 매수 당일 종가가 매수가(<strong>$${p.avg_entry.toFixed(2)}</strong>) 위를 지킬 때, 또는 ② 1~3일 내 <strong>$${p.avg_entry.toFixed(2)} ~ $${buyZoneMax.toFixed(2)} (+0~5%)</strong> 사이에서 지지를 받고 반등할 때 삽니다.</p>
+                <p>• <strong>만약 +5%($${buyZoneMax.toFixed(2)})를 이미 넘겼다면?</strong> 미너비니는 급등한 주식을 추격하지 않습니다. 2차 매수는 보류하고 현재 <strong>${p.shares}주</strong>만 들고 가세요.</p>
               </div>
               <div class="p-3 rounded-xl bg-indigo-50/70 border border-indigo-200 space-y-2">
-                <div class="font-bold text-indigo-950">실제로 추가 매수했다면 바로 기록하기</div>
+                <div class="font-bold text-indigo-950">2차 매수 체결 후 바로 반영하기</div>
+                <div class="grid grid-cols-2 gap-2">
+                  <div>
+                    <label class="block text-[10px] font-semibold text-slate-600 mb-0.5">2차 매수 수량 (주)</label>
+                    <input id="pyr-add-qty" type="number" min="1" step="1" value="${suggestedAddShares}" class="w-full px-2 py-1 border border-slate-300 rounded-lg bg-white font-bold tabular-nums" />
+                  </div>
+                  <div>
+                    <label class="block text-[10px] font-semibold text-slate-600 mb-0.5">2차 매수 단가 ($)</label>
+                    <input id="pyr-add-price" type="number" step="0.01" value="${p.current_price.toFixed(2)}" class="w-full px-2 py-1 border border-slate-300 rounded-lg bg-white font-bold tabular-nums" />
+                  </div>
+                </div>
+                <button id="btn-exec-pyr-add" type="button" class="w-full py-1.5 rounded-lg text-xs font-bold bg-indigo-600 text-white hover:bg-indigo-700">2차 매수 반영하기 (보유수량·평단가 자동 계산)</button>
+              </div>
+            `;
+          } else {
+            guideHtml = `
+              <div class="p-3 rounded-xl bg-purple-50 border border-purple-200 text-purple-950 font-semibold">
+                🟣 이미 목표 수량(${p.shares}주) 보유 중 — "그냥 +8% 올랐다고 추매하지 마세요"
+              </div>
+              <div class="p-3 rounded-xl bg-slate-50 border border-slate-200 space-y-1.5">
+                <div class="font-bold text-slate-900">미너비니 3차 이상 불타기(추가매수) 진짜 기준</div>
+                <p>• <strong>+8% 올랐다고 바로 사는 게 아닙니다:</strong> 주가가 이미 오른 상태(현재 +${gain.toFixed(1)}%)에서 아무 때나 추매하면 평단가만 높아져 작은 조정에도 수익이 날아갑니다.</p>
+                <p>• <strong>언제 사나요?</strong> 주가가 한 번 오른 뒤 <strong>몇 주간 쉬면서 새로운 바닥(2차 VCP·깃발 패턴)을 만들고 새 돌파 지점을 뚫을 때</strong>만 추가합니다.</p>
+                <p>• <strong>얼마나 사나요?</strong> 기존 보유량(${p.shares}주)보다 적게(예: <strong>${suggestedAddShares}주 · 약 ${suggestedAddKrw.toLocaleString()}원</strong> 이내)만 추가하고, 총 투자금은 내 계좌의 <strong>25%를 절대 넘기지 않습니다.</strong></p>
+              </div>
+              <div class="p-3 rounded-xl bg-indigo-50/70 border border-indigo-200 space-y-2">
+                <div class="font-bold text-indigo-950">새 바닥 돌파로 추가매수 했다면 기록하기</div>
                 <div class="grid grid-cols-2 gap-2">
                   <div>
                     <label class="block text-[10px] font-semibold text-slate-600 mb-0.5">추가 매수 수량 (주)</label>
