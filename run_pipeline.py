@@ -682,7 +682,7 @@ def run_sepa_pipeline(finviz_filters: Dict[str, str] = None, max_universe: int =
     trade_date = datetime.now(timezone.utc).strftime("%Y-%m-%d")
     eligible_tickers = {rec["ticker"] for rec in uni["eligible"] if isinstance(rec, dict) and rec.get("ticker")}
     try:
-        breadth_history = build_breadth_history(history, spy_df, eligible_tickers, sp500_set, NDX100_SET, analyzed_stocks, regime, trade_date)
+        breadth_history = build_breadth_history(ohlcv_map, spy_df, eligible_tickers, sp500_set, NDX100_SET, analyzed_stocks, regime, trade_date)
     except Exception as _bh_err:
         print(f"[WARN] build_breadth_history failed (continuing pipeline): {_bh_err}")
         breadth_history = [{"date": trade_date, "b50": regime.get("pct_above_50_sma"), "b200": regime.get("pct_above_200_sma"), "leader_pct": regime.get("leader_tt_pass_pct")}]
