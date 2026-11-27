@@ -228,7 +228,10 @@ def build_breadth_history(history, spy_df, eligible_set, sp500_set, ndx100_set, 
             df = history.get(t)
             if df is None or df.empty or "Close" not in df.columns:
                 continue
-            closes = df["Close"].astype(float)
+            close_obj = df["Close"]
+            if isinstance(close_obj, pd.DataFrame):
+                close_obj = close_obj.iloc[:, 0]
+            closes = pd.to_numeric(close_obj, errors="coerce").dropna()
             sma50 = closes.rolling(50).mean()
             sma200 = closes.rolling(200).mean()
             roll_peak = closes.rolling(504, min_periods=20).max()
@@ -238,7 +241,7 @@ def build_breadth_history(history, spy_df, eligible_set, sp500_set, ndx100_set, 
             is_sp = t in sp500_set
             is_ndx = t in ndx100_set
 
-            for dt, c_val, s50, s200, pk, lw in zip(df.index, closes, sma50, sma200, roll_peak, roll_low):
+            for dt, c_val, s50, s200, pk, lw in zip(closes.index, closes, sma50, sma200, roll_peak, roll_low):
                 ds = dt.strftime("%Y-%m-%d")
                 pos = date_to_pos.get(ds)
                 if pos is None:
@@ -677,7 +680,8 @@ def run_sepa_pipeline(finviz_filters: Dict[str, str] = None, max_universe: int =
             item["prices"] = [round(float(x), 2) for x in tail_df["Close"].tolist()]
 
     trade_date = datetime.now(timezone.utc).strftime("%Y-%m-%d")
-    breadth_history = build_breadth_history(history, spy_df, set(uni["eligible"]), sp500_set, NDX100_SET, analyzed_stocks, regime, trade_date)
+    eligible_tickers = {rec["ticker"] for rec in uni["eligible"] if isinstance(rec, dict) and rec.get("ticker")}
+    breadth_history = build_breadth_history(history, spy_df, eligible_tickers, sp500_set, NDX100_SET, analyzed_stocks, regime, trade_date)
     payload = {
         "breadth_history": breadth_history,
         "schema_version": "2.0.0",
