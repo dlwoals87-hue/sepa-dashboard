@@ -1100,30 +1100,33 @@ python -m unittest discover -s tests -v</pre>
           <div id="r5080-market-verdict" class="px-3 py-1.5 rounded-xl text-xs font-bold bg-slate-100 text-slate-800">시장 위험 비중 계산 중...</div>
         </div>
 
-        <!-- 5 Breakdown Cards: Clickable to filter table -->
+        <!-- 5 Breakdown Cards: Intuitive Single-Denominator + 1Y Trend Chart Button -->
         <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3 text-xs">
           <button type="button" data-r5080card="all" class="r5080-card-btn text-left p-3 rounded-xl bg-slate-50 border border-slate-200 hover:ring-2 hover:ring-slate-400 transition cursor-pointer">
-            <div class="text-slate-600 font-semibold">전체 스캔 / 적격 풀 (클릭: 전체)</div>
-            <div id="r5080-kpi-univ" class="text-lg font-bold text-slate-900 tabular-nums mt-1">-</div>
-            <div id="r5080-kpi-univ-sub" class="text-[11px] text-slate-500 mt-0.5">전체 위험군 비중 -</div>
+            <div class="text-slate-600 font-semibold">적격 종목 중 위험군 (클릭: 전체)</div>
+            <div id="r5080-kpi-univ" class="text-base font-bold text-slate-900 tabular-nums mt-1">-</div>
+            <div id="r5080-kpi-univ-sub" class="text-[11px] text-slate-500 mt-0.5">-</div>
           </button>
           <button type="button" data-r5080card="alert" class="r5080-card-btn text-left p-3 rounded-xl bg-rose-50 border border-rose-200 hover:ring-2 hover:ring-rose-400 transition cursor-pointer">
-            <div class="text-rose-700 font-semibold">고위험 (50/80 경보 · 클릭)</div>
-            <div id="r5080-kpi-alert" class="text-lg font-bold text-rose-900 tabular-nums mt-1">0</div>
-            <div id="r5080-kpi-alert-pct" class="text-[11px] text-rose-700 mt-0.5">전체 0% · 적격 0%</div>
+            <div class="text-rose-700 font-semibold">고위험 (급등 후 -15%↑ 하락)</div>
+            <div id="r5080-kpi-alert" class="text-base font-bold text-rose-900 tabular-nums mt-1">0</div>
+            <div id="r5080-kpi-alert-pct" class="text-[11px] text-rose-700 mt-0.5">-</div>
           </button>
           <button type="button" data-r5080card="half" class="r5080-card-btn text-left p-3 rounded-xl bg-slate-100 border border-slate-300 hover:ring-2 hover:ring-slate-500 transition cursor-pointer">
-            <div class="text-slate-700 font-semibold">진행중 (이미 -50%↓ · 클릭)</div>
-            <div id="r5080-kpi-half" class="text-lg font-bold text-slate-900 tabular-nums mt-1">0</div>
-            <div id="r5080-kpi-half-pct" class="text-[11px] text-slate-600 mt-0.5">전체 0% · 적격 0%</div>
+            <div class="text-slate-700 font-semibold">이미 -50%↓ 폭락 진행</div>
+            <div id="r5080-kpi-half" class="text-base font-bold text-slate-900 tabular-nums mt-1">0</div>
+            <div id="r5080-kpi-half-pct" class="text-[11px] text-slate-600 mt-0.5">-</div>
           </button>
           <button type="button" data-r5080card="watch" class="r5080-card-btn text-left p-3 rounded-xl bg-amber-50 border border-amber-200 hover:ring-2 hover:ring-amber-400 transition cursor-pointer">
-            <div class="text-amber-800 font-semibold">초기 이탈 관찰 (-10%~-15% · 클릭)</div>
-            <div id="r5080-kpi-watch" class="text-lg font-bold text-amber-900 tabular-nums mt-1">0</div>
-            <div id="r5080-kpi-watch-pct" class="text-[11px] text-amber-800 mt-0.5">전체 0% · 적격 0%</div>
+            <div class="text-amber-800 font-semibold">초기 이탈 주의 (-10%~-15%)</div>
+            <div id="r5080-kpi-watch" class="text-base font-bold text-amber-900 tabular-nums mt-1">0</div>
+            <div id="r5080-kpi-watch-pct" class="text-[11px] text-amber-800 mt-0.5">-</div>
           </button>
           <div class="p-3 rounded-xl bg-blue-50 border border-blue-200">
-            <div class="text-blue-800 font-semibold">주요 지수 내 50/80 위험군</div>
+            <div class="flex items-center justify-between gap-1">
+              <span class="text-blue-800 font-semibold">주요 지수 내 50/80 위험군</span>
+              <button type="button" onclick="openVcpDetailModal('index5080')" class="px-1.5 py-0.5 rounded bg-blue-600 text-white hover:bg-blue-700 text-[10px] font-bold">📈 1년 추세</button>
+            </div>
             <div id="r5080-kpi-idx" class="text-xs font-bold text-blue-950 tabular-nums mt-1.5 space-y-1">
               <button type="button" id="btn-idx-sp500" class="w-full text-left px-2 py-1 rounded-lg bg-white/80 hover:bg-blue-100 border border-blue-200 transition cursor-pointer">S&amp;P 500: -</button>
               <button type="button" id="btn-idx-ndx100" class="w-full text-left px-2 py-1 rounded-lg bg-white/80 hover:bg-blue-100 border border-blue-200 transition cursor-pointer">Nasdaq 100: -</button>
@@ -1415,6 +1418,8 @@ python -m unittest discover -s tests -v</pre>
     let stocks = JSON.parse(JSON.stringify(DEMO_STOCKS));
     let universeStats = { total_scanned: 6330, eligible_count: 1780, sp500_total: 500, ndx100_total: 101 };
     let currentRegimeData = null;
+    let breadthHistory = [];
+    let vcpDetailChartInst = null;
     const LS_WATCH_KEY = "sepa_v2_watchlist";
     const LS_POS_KEY = "sepa_v2_open_positions";
     const LS_JOURNAL_KEY = "sepa_v2_journal_trades";
@@ -3891,6 +3896,7 @@ python -m unittest discover -s tests -v</pre>
         revenueB: x.revenueB || [10, 12, 14, 16], netIncomeB: x.netIncomeB || [2, 2.4, 2.9, 3.5]
       }));
       if (parsed.universe_stats) universeStats = parsed.universe_stats;
+      breadthHistory = Array.isArray(parsed.breadth_history) ? parsed.breadth_history : [];
       if (Array.isArray(parsed.spy_prices) && parsed.spy_prices.length) SPY_60 = parsed.spy_prices;
       if (parsed.market_regime) {
         currentRegimeData = parsed.market_regime;
@@ -4027,15 +4033,15 @@ python -m unittest discover -s tests -v</pre>
       const totElig = list.length || universeStats.eligible_count || 1;
       const pctOf = (n, d) => d > 0 ? ((n / d) * 100).toFixed(1) : "0.0";
 
-      document.getElementById("r5080-kpi-univ").textContent = `${totScan.toLocaleString()} / ${totElig.toLocaleString()}개`;
-      document.getElementById("r5080-kpi-univ-sub").textContent = `위험군 합계 ${allRisk.length}개 (전체 ${pctOf(allRisk.length, totScan)}% · 적격 ${pctOf(allRisk.length, totElig)}%)`;
+      document.getElementById("r5080-kpi-univ").textContent = `${allRisk.length.toLocaleString()} / ${totElig.toLocaleString()}개 (${pctOf(allRisk.length, totElig)}%)`;
+      document.getElementById("r5080-kpi-univ-sub").textContent = `전체 스캔 ${totScan.toLocaleString()}개 중 실제 매매가능(적격) 기준`;
 
-      document.getElementById("r5080-kpi-alert").textContent = `${alerts.length}개`;
-      document.getElementById("r5080-kpi-alert-pct").textContent = `전체 ${pctOf(alerts.length, totScan)}% · 적격 ${pctOf(alerts.length, totElig)}%`;
-      document.getElementById("r5080-kpi-half").textContent = `${halves.length}개`;
-      document.getElementById("r5080-kpi-half-pct").textContent = `전체 ${pctOf(halves.length, totScan)}% · 적격 ${pctOf(halves.length, totElig)}%`;
-      document.getElementById("r5080-kpi-watch").textContent = `${watches.length}개`;
-      document.getElementById("r5080-kpi-watch-pct").textContent = `전체 ${pctOf(watches.length, totScan)}% · 적격 ${pctOf(watches.length, totElig)}%`;
+      document.getElementById("r5080-kpi-alert").textContent = `${alerts.length.toLocaleString()}개 (적격의 ${pctOf(alerts.length, totElig)}%)`;
+      document.getElementById("r5080-kpi-alert-pct").textContent = `2배↑ 오른 뒤 고점 대비 -15%~-50% 하락`;
+      document.getElementById("r5080-kpi-half").textContent = `${halves.length.toLocaleString()}개 (적격의 ${pctOf(halves.length, totElig)}%)`;
+      document.getElementById("r5080-kpi-half-pct").textContent = `고점 대비 이미 반토막(-50% 이상) 하락`;
+      document.getElementById("r5080-kpi-watch").textContent = `${watches.length.toLocaleString()}개 (적격의 ${pctOf(watches.length, totElig)}%)`;
+      document.getElementById("r5080-kpi-watch-pct").textContent = `고점 대비 -10%~-15% 빠지기 시작 (관찰)`;
 
       const spRisk = allRisk.filter(x => x.in_sp500);
       const ndxRisk = allRisk.filter(x => x.in_ndx100);
@@ -4219,7 +4225,7 @@ python -m unittest discover -s tests -v</pre>
             <p>왼쪽에서 오른쪽으로 갈수록 변동폭이 좁아지는 이유는 조정이 반복될수록 급히 파는 <strong>'약한 손(단타·손절 물량)'이 털려나가고</strong> 기관이 물량을 받아내기 때문입니다. 여기에 <strong>거래량까지 50일 평균 0.75배 이하로 바짝 마르면</strong> 시장에 더 이상 팔 사람이 없는 <strong>'매물 진공 상태'</strong>가 완성되며, 시장 하락 시 덜 빠지고 빠르게 전고점(피벗)으로 회복하는 '테니스 공' 탄력성을 보여줍니다.</p>
           </div>
         `;
-      } else if (mode === "b50" || mode === "b200" || mode === "leader" || mode === "breadth") {
+      } else if (mode === "b50" || mode === "b200" || mode === "leader" || mode === "breadth" || mode === "index5080") {
         const rg = currentRegimeData || {};
         const eligible = stocks.filter(s => s.universe_status !== "EXCLUDED");
         const totalElig = eligible.length;
@@ -4282,6 +4288,25 @@ python -m unittest discover -s tests -v</pre>
               <p><strong>• 선행 경보 역할:</strong> 시장이 꺾일 때는 항상 지수보다 <strong>가장 강했던 주도주들이 먼저 추세 조건을 잃습니다.</strong> 현재 <strong>${lPctVal ?? "-"}%</strong>로 55% 아래라면 상위 20% 강한 종목조차 절반 이상 균열이 났다는 경고입니다.</p>
               <p><strong>• 강세장 복귀 신호:</strong> 지수가 아직 바닥을 다지더라도 주도주 건강도가 <strong>60~70% 이상으로 먼저 올라오면</strong> 새로운 주도주 장세가 열리고 있다는 신호로 활용합니다.</p>
             </div>`;
+        } else if (mode === "index5080") {
+          const allRisk5080 = eligible.filter(s => ["고위험 (50/80 경보)", "진행중 (-50% 도달)", "초기 이탈 관찰"].includes(s.rule_50_80_status));
+          const spCnt = allRisk5080.filter(s => s.in_sp500).length;
+          const ndxCnt = allRisk5080.filter(s => s.in_ndx100).length;
+          const spTot = universeStats.sp500_total || 500;
+          const ndxTot = universeStats.ndx100_total || 101;
+          const spPct = spTot > 0 ? ((spCnt / spTot) * 100).toFixed(1) : "-";
+          const ndxPct = ndxTot > 0 ? ((ndxCnt / ndxTot) * 100).toFixed(1) : "-";
+          titleEl.textContent = "S&P 500 · Nasdaq 100 내 50/80 위험군 — 최근 1년 추세";
+          bodyEl.innerHTML = `
+            <div class="p-3 rounded-xl bg-blue-50 border border-blue-200 text-xs space-y-1">
+              <div class="font-bold text-blue-950">오늘 현황: S&amp;P 500 ${spPct}% (${spCnt}/${spTot}개) · Nasdaq 100 ${ndxPct}% (${ndxCnt}/${ndxTot}개)</div>
+              <p class="text-[11px] text-blue-900">지수가 애플·엔비디아 등 몇 개 대형주 덕분에 버티고 있어도, <strong>지수 안 개별 종목들의 50/80 이탈 비율이 몇 주 연속 올라간다면 시장 내부 균열(선행 경보)</strong>입니다. 반대로 높은 수준에서 꺾여 내려오기 시작하면 시장 회복 신호입니다.</p>
+            </div>
+            <div id="vcp-chart-wrap" class="p-3 rounded-xl bg-white border border-slate-200 space-y-1.5">
+              <div class="flex items-center justify-between text-xs"><strong class="text-slate-900">최근 1년 지수별 50/80 위험군 비중(%) 추이</strong><span id="vcp-chart-note" class="text-[10px] text-slate-500"></span></div>
+              <div class="relative h-48 w-full"><canvas id="vcp-detail-chart"></canvas></div>
+            </div>
+          `;
         } else {
           titleEl.textContent = "시장 폭(Breadth) 3대 지표 — 과거 비교표 & 활용법";
           bodyEl.innerHTML = `
@@ -4590,6 +4615,67 @@ python -m unittest discover -s tests -v</pre>
         `;
       }
 
+      if (mode === "b50" || mode === "b200" || mode === "leader" || mode === "breadth" || mode === "index5080") {
+        if (mode !== "index5080") {
+          bodyEl.innerHTML += `
+            <div id="vcp-chart-wrap" class="p-3 rounded-xl bg-white border border-slate-200 space-y-1.5">
+              <div class="flex items-center justify-between text-xs"><strong class="text-slate-900">최근 1년 시계열 추이 (%)</strong><span id="vcp-chart-note" class="text-[10px] text-slate-500"></span></div>
+              <div class="relative h-44 w-full"><canvas id="vcp-detail-chart"></canvas></div>
+            </div>`;
+        }
+        setTimeout(() => {
+          const canvas = document.getElementById("vcp-detail-chart");
+          const noteEl = document.getElementById("vcp-chart-note");
+          if (!canvas) return;
+          if (vcpDetailChartInst) { vcpDetailChartInst.destroy(); vcpDetailChartInst = null; }
+          const pts = breadthHistory.length ? breadthHistory : [];
+          const labels = pts.map(r => r.date ? r.date.slice(5) : "");
+          let datasets = [];
+          if (mode === "b50") {
+            datasets = [{ label: "50일선 위 비중(%)", data: pts.map(r => r.b50 ?? null), borderColor: "#2563eb", backgroundColor: "rgba(37,99,235,0.1)", fill: true, tension: 0.2, pointRadius: 0 }];
+          } else if (mode === "b200") {
+            datasets = [{ label: "200일선 위 비중(%)", data: pts.map(r => r.b200 ?? null), borderColor: "#059669", backgroundColor: "rgba(5,150,105,0.1)", fill: true, tension: 0.2, pointRadius: 0 }];
+          } else if (mode === "leader") {
+            const leaderPts = pts.filter(r => r.leader_pct != null);
+            if (leaderPts.length >= 2) {
+              datasets = [{ label: "주도주 건강도 RS80+(%)", data: pts.map(r => r.leader_pct ?? null), borderColor: "#d97706", backgroundColor: "rgba(217,119,6,0.1)", fill: true, tension: 0.2, pointRadius: 2 }];
+            } else {
+              datasets = [
+                { label: "50일선 위 비중(%)", data: pts.map(r => r.b50 ?? null), borderColor: "#2563eb", tension: 0.2, pointRadius: 0 },
+                { label: "200일선 위 비중(%)", data: pts.map(r => r.b200 ?? null), borderColor: "#059669", tension: 0.2, pointRadius: 0 }
+              ];
+              if (noteEl) noteEl.textContent = "주도주 건강도는 오늘부터 매일 누적됩니다 (참고: 50·200일선 1년 추이)";
+            }
+          } else if (mode === "index5080") {
+            datasets = [
+              { label: "S&P 500 위험군(%)", data: pts.map(r => r.sp500_5080_pct ?? null), borderColor: "#2563eb", tension: 0.2, pointRadius: 0 },
+              { label: "Nasdaq 100 위험군(%)", data: pts.map(r => r.ndx100_5080_pct ?? null), borderColor: "#e11d48", tension: 0.2, pointRadius: 0 }
+            ];
+          } else {
+            datasets = [
+              { label: "50일선 위(%)", data: pts.map(r => r.b50 ?? null), borderColor: "#2563eb", tension: 0.2, pointRadius: 0 },
+              { label: "200일선 위(%)", data: pts.map(r => r.b200 ?? null), borderColor: "#059669", tension: 0.2, pointRadius: 0 }
+            ];
+          }
+          if (noteEl && !noteEl.textContent) {
+            noteEl.textContent = pts.length >= 2 ? `누적 ${pts.length}거래일 (매일 자동 적재)` : "GitHub Actions 실행 후 1년치 추세가 자동 표시됩니다";
+          }
+          vcpDetailChartInst = new Chart(canvas.getContext("2d"), {
+            type: "line",
+            data: { labels: labels.length ? labels : ["오늘"], datasets },
+            options: {
+              responsive: true,
+              maintainAspectRatio: false,
+              interaction: { mode: "index", intersect: false },
+              plugins: { legend: { labels: { boxWidth: 10, font: { size: 10 } } } },
+              scales: {
+                x: { ticks: { maxTicksLimit: 8, font: { size: 10 } } },
+                y: { min: 0, max: 100, ticks: { callback: v => v + "%", font: { size: 10 } } }
+              }
+            }
+          });
+        }, 30);
+      }
       modal.classList.remove("hidden");
       modal.classList.add("flex");
       if (window.lucide) lucide.createIcons();

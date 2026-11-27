@@ -193,6 +193,117 @@ def load_or_update_ohlcv(tickers: List[str]) -> Dict[str, pd.DataFrame]:
     return ohlcv_map
 
 
+
+def build_breadth_history(history, spy_df, eligible_set, sp500_set, ndx100_set, analyzed_stocks, regime, trade_date):
+    hist_path = os.path.join("data", "market_history.json")
+    os.makedirs("data", exist_ok=True)
+    records = {}
+    if os.path.exists(hist_path):
+        try:
+            with open(hist_path, "r", encoding="utf-8") as f:
+                loaded = json.load(f)
+            if isinstance(loaded, list):
+                for row in loaded:
+                    if isinstance(row, dict) and row.get("date"):
+                        records[row["date"]] = row
+        except Exception:
+            records = {}
+
+    if len(records) < 60 and spy_df is not None and not spy_df.empty:
+        dates_idx = spy_df.tail(252).index
+        date_strs = [d.strftime("%Y-%m-%d") for d in dates_idx]
+        elig_b50_cnt = [0] * len(date_strs)
+        elig_b50_tot = [0] * len(date_strs)
+        elig_b200_cnt = [0] * len(date_strs)
+        elig_b200_tot = [0] * len(date_strs)
+        sp_risk_cnt = [0] * len(date_strs)
+        sp_tot_cnt = [0] * len(date_strs)
+        ndx_risk_cnt = [0] * len(date_strs)
+        ndx_tot_cnt = [0] * len(date_strs)
+
+        date_to_pos = {ds: idx for idx, ds in enumerate(date_strs)}
+        target_tickers = set(eligible_set) | set(sp500_set) | set(ndx100_set)
+
+        for t in target_tickers:
+            df = history.get(t)
+            if df is None or df.empty or "Close" not in df.columns:
+                continue
+            closes = df["Close"].astype(float)
+            sma50 = closes.rolling(50).mean()
+            sma200 = closes.rolling(200).mean()
+            roll_peak = closes.rolling(504, min_periods=20).max()
+            roll_low = closes.rolling(504, min_periods=20).min()
+
+            is_elig = t in eligible_set
+            is_sp = t in sp500_set
+            is_ndx = t in ndx100_set
+
+            for dt, c_val, s50, s200, pk, lw in zip(df.index, closes, sma50, sma200, roll_peak, roll_low):
+                ds = dt.strftime("%Y-%m-%d")
+                pos = date_to_pos.get(ds)
+                if pos is None:
+                    continue
+                if is_elig:
+                    if pd.notna(s50):
+                        elig_b50_tot[pos] += 1
+                        if c_val > s50:
+                            elig_b50_cnt[pos] += 1
+                    if pd.notna(s200):
+                        elig_b200_tot[pos] += 1
+                        if c_val > s200:
+                            elig_b200_cnt[pos] += 1
+                if is_sp or is_ndx:
+                    in_5080 = False
+                    if pd.notna(pk) and pd.notna(lw) and lw > 0 and pk > 0:
+                        runup = (pk / lw - 1.0) * 100.0
+                        dd = (c_val / pk - 1.0) * 100.0
+                        if runup >= 100.0 and dd <= -10.0:
+                            in_5080 = True
+                    if is_sp:
+                        sp_tot_cnt[pos] += 1
+                        if in_5080:
+                            sp_risk_cnt[pos] += 1
+                    if is_ndx:
+                        ndx_tot_cnt[pos] += 1
+                        if in_5080:
+                            ndx_risk_cnt[pos] += 1
+
+        for pos, ds in enumerate(date_strs):
+            if ds in records:
+                continue
+            row = {"date": ds}
+            if elig_b50_tot[pos] > 0:
+                row["b50"] = round((elig_b50_cnt[pos] / elig_b50_tot[pos]) * 100.0, 1)
+            if elig_b200_tot[pos] > 0:
+                row["b200"] = round((elig_b200_cnt[pos] / elig_b200_tot[pos]) * 100.0, 1)
+            if sp_tot_cnt[pos] > 0:
+                row["sp500_5080_pct"] = round((sp_risk_cnt[pos] / sp_tot_cnt[pos]) * 100.0, 1)
+            if ndx_tot_cnt[pos] > 0:
+                row["ndx100_5080_pct"] = round((ndx_risk_cnt[pos] / ndx_tot_cnt[pos]) * 100.0, 1)
+            records[ds] = row
+
+    sp_risk_now = sum(1 for x in analyzed_stocks if x.get("in_sp500") and x.get("rule_50_80_status") in ("고위험 (50/80 경보)", "진행중 (-50% 도달)", "초기 이탈 관찰"))
+    ndx_risk_now = sum(1 for x in analyzed_stocks if x.get("in_ndx100") and x.get("rule_50_80_status") in ("고위험 (50/80 경보)", "진행중 (-50% 도달)", "초기 이탈 관찰"))
+    sp_tot_now = len(sp500_set) if sp500_set else 500
+    ndx_tot_now = len(ndx100_set) if ndx100_set else 101
+
+    records[trade_date] = {
+        "date": trade_date,
+        "b50": regime.get("pct_above_50_sma"),
+        "b200": regime.get("pct_above_200_sma"),
+        "leader_pct": regime.get("leader_tt_pass_pct"),
+        "sp500_5080_pct": round((sp_risk_now / sp_tot_now) * 100.0, 1) if sp_tot_now else None,
+        "ndx100_5080_pct": round((ndx_risk_now / ndx_tot_now) * 100.0, 1) if ndx_tot_now else None,
+    }
+
+    ordered = [records[k] for k in sorted(records.keys())][-260:]
+    try:
+        with open(hist_path, "w", encoding="utf-8") as f:
+            json.dump(ordered, f, ensure_ascii=False)
+    except Exception:
+        pass
+    return ordered
+
 def run_sepa_pipeline(finviz_filters: Dict[str, str] = None, max_universe: int = 0, out_json: str = "sepa_dashboard_data.json") -> Dict:
     cfg_u = DEFAULT_CONFIG["universe"]
     cfg_r = DEFAULT_CONFIG["regime"]
@@ -566,7 +677,9 @@ def run_sepa_pipeline(finviz_filters: Dict[str, str] = None, max_universe: int =
             item["prices"] = [round(float(x), 2) for x in tail_df["Close"].tolist()]
 
     trade_date = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+    breadth_history = build_breadth_history(history, spy_df, set(uni["eligible"]), sp500_set, NDX100_SET, analyzed_stocks, regime, trade_date)
     payload = {
+        "breadth_history": breadth_history,
         "schema_version": "2.0.0",
         "trade_date": trade_date,
         "generated_at": datetime.now(timezone.utc).isoformat(),
