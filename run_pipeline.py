@@ -211,7 +211,7 @@ def build_breadth_history(history, spy_df, eligible_set, sp500_set, ndx100_set, 
 
     if len(records) < 60 and spy_df is not None and not spy_df.empty:
         dates_idx = spy_df.tail(252).index
-        date_strs = [d.strftime("%Y-%m-%d") for d in dates_idx]
+        date_strs = [d.strftime("%Y-%m-%d") if hasattr(d, "strftime") else str(d)[:10] for d in dates_idx]
         elig_b50_cnt = [0] * len(date_strs)
         elig_b50_tot = [0] * len(date_strs)
         elig_b200_cnt = [0] * len(date_strs)
@@ -242,7 +242,7 @@ def build_breadth_history(history, spy_df, eligible_set, sp500_set, ndx100_set, 
             is_ndx = t in ndx100_set
 
             for dt, c_val, s50, s200, pk, lw in zip(closes.index, closes, sma50, sma200, roll_peak, roll_low):
-                ds = dt.strftime("%Y-%m-%d")
+                ds = dt.strftime("%Y-%m-%d") if hasattr(dt, "strftime") else str(dt)[:10]
                 pos = date_to_pos.get(ds)
                 if pos is None:
                     continue
@@ -681,7 +681,11 @@ def run_sepa_pipeline(finviz_filters: Dict[str, str] = None, max_universe: int =
 
     trade_date = datetime.now(timezone.utc).strftime("%Y-%m-%d")
     eligible_tickers = {rec["ticker"] for rec in uni["eligible"] if isinstance(rec, dict) and rec.get("ticker")}
-    breadth_history = build_breadth_history(history, spy_df, eligible_tickers, sp500_set, NDX100_SET, analyzed_stocks, regime, trade_date)
+    try:
+        breadth_history = build_breadth_history(history, spy_df, eligible_tickers, sp500_set, NDX100_SET, analyzed_stocks, regime, trade_date)
+    except Exception as _bh_err:
+        print(f"[WARN] build_breadth_history failed (continuing pipeline): {_bh_err}")
+        breadth_history = [{"date": trade_date, "b50": regime.get("pct_above_50_sma"), "b200": regime.get("pct_above_200_sma"), "leader_pct": regime.get("leader_tt_pass_pct")}]
     payload = {
         "breadth_history": breadth_history,
         "schema_version": "2.0.0",
